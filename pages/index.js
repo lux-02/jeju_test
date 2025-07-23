@@ -55,7 +55,7 @@ export default function Home() {
     },
     {
       emoji: "🧗‍♂️",
-      name: "야생돌하르방",
+      name: "모험돌하르방",
       color: "from-jeju-sunset to-jeju-stone",
       shadowColor: "hover:shadow-sunset",
       code: "B-D-E",
@@ -106,21 +106,21 @@ export default function Home() {
           <div
             className={`mb-6 ${isLoaded ? "animate-slide-up" : "opacity-0"}`}
           >
-            <h1 className="text-5xl md:text-6xl font-black mb-4 leading-tight">
-              <span className="block text-white">제주 돌하르방</span>
-              <span className="text-gradient-jeju animate-gradient bg-300%">
-                여행유형 테스트
+            <h1 className="text-4xl md:text-6xl font-black mb-4 leading-tight">
+              <span className="block  text-gradient-jeju animate-gradient">
+                제주맹글이
               </span>
+              <span className="text-white bg-300%">여행유형 테스트</span>
             </h1>
 
             <div className="relative mx-auto max-w-lg">
               <div className="absolute -inset-1 bg-gradient-to-r from-jeju-sunset to-jeju-ocean rounded-4xl blur opacity-25"></div>
-              <div className="relative bg-white/80 backdrop-blur-sm rounded-4xl p-6 border border-white/40">
-                <p className="text-xl font-medium text-gray-700 leading-relaxed">
+              <div className="relative backdrop-blur-sm p-6 ">
+                <p className="text-md font-medium text-white leading-relaxed">
                   🌴 나는 어떤 돌하르방 여행 유형일까? 🌴
                   <br />
-                  <span className="text-lg text-jeju-stone">
-                    9가지 트렌디한 밸런스 게임으로
+                  <span className="text-md text-white">
+                    9가지 밸런스 게임으로
                     <br />
                   </span>
                   <span className="font-bold text-gradient-jeju">
