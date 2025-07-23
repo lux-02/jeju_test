@@ -1,4 +1,5 @@
 import { supabase } from "../../lib/supabase";
+import { getTypeName } from "../../lib/typeMapping";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -105,9 +106,10 @@ export default async function handler(req, res) {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 8)
       .map(([type, count], index) => ({
-        name: type,
+        name: getTypeName(type), // 코드 대신 유형명 사용
         value: count,
         fill: getColorByIndex(index),
+        originalCode: type, // 원본 코드도 보관
       }));
 
     // 총 응답자 수
@@ -126,13 +128,19 @@ export default async function handler(req, res) {
       console.error("세부 응답 조회 오류:", detailedError);
     }
 
+    // finalResultStats도 유형명으로 변환
+    const finalResultStatsWithNames = {};
+    Object.entries(finalResultStats).forEach(([code, count]) => {
+      finalResultStatsWithNames[getTypeName(code)] = count;
+    });
+
     return res.status(200).json({
       success: true,
       data: {
         barChartData,
         pieChartData,
         questionStats,
-        finalResultStats,
+        finalResultStats: finalResultStatsWithNames,
         totalResponses,
         detailedResponses: detailedResponses || [],
         lastUpdated: new Date().toISOString(),
