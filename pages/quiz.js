@@ -2,6 +2,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { supabase } from "../lib/supabase";
 
 // 실제 질문 데이터
 const QUESTIONS = [
@@ -223,13 +224,72 @@ export default function Quiz() {
   const [answers, setAnswers] = useState({});
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
 
   useEffect(() => {
     setIsLoaded(true);
+    // 고유한 세션 ID 생성
+    const newSessionId = `quiz_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+    setSessionId(newSessionId);
   }, []);
 
-  const handleAnswer = (optionId) => {
-    if (isAnimating) return;
+  // Supabase에 퀴즈 응답을 저장하는 함수
+  const saveQuizResponse = async (
+    sessionId,
+    questionId,
+    axis,
+    selectedOption,
+    finalResult = null
+  ) => {
+    try {
+      const { data, error } = await supabase.from("quiz_responses").insert([
+        {
+          session_id: sessionId,
+          question_id: questionId,
+          axis: axis,
+          selected_option: selectedOption,
+          final_result: finalResult,
+          question_text: QUESTIONS[questionId - 1].question,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+
+      if (error) {
+        console.error("퀴즈 응답 저장 오류:", error);
+      } else {
+        console.log("퀴즈 응답 저장 성공:", data);
+      }
+    } catch (err) {
+      console.error("데이터베이스 연결 오류:", err);
+    }
+  };
+
+  // 최종 결과를 저장하는 함수
+  const saveFinalResult = async (sessionId, answers, finalResult) => {
+    try {
+      const { data, error } = await supabase.from("quiz_results").insert([
+        {
+          session_id: sessionId,
+          final_result: finalResult,
+          answers: JSON.stringify(answers), // 모든 답변을 JSON으로 저장
+          completed_at: new Date().toISOString(),
+        },
+      ]);
+
+      if (error) {
+        console.error("최종 결과 저장 오류:", error);
+      } else {
+        console.log("최종 결과 저장 성공:", data);
+      }
+    } catch (err) {
+      console.error("최종 결과 저장 중 오류:", err);
+    }
+  };
+
+  const handleAnswer = async (optionId) => {
+    if (isAnimating || !sessionId) return;
 
     // 답변 저장
     const currentAxis = QUESTIONS[currentQuestion].axis;
@@ -239,16 +299,28 @@ export default function Quiz() {
     };
     setAnswers(newAnswers);
 
+    // 현재 답변을 데이터베이스에 저장
+    await saveQuizResponse(
+      sessionId,
+      currentQuestion + 1, // 질문 ID (1부터 시작)
+      currentAxis,
+      optionId
+    );
+
     setIsAnimating(true);
 
     // 다음 질문으로 이동 또는 결과 페이지로
-    setTimeout(() => {
+    setTimeout(async () => {
       if (currentQuestion < QUESTIONS.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
         setIsAnimating(false);
       } else {
-        // 결과 계산 및 결과 페이지로 이동
+        // 결과 계산 및 최종 결과 저장
         const result = calculateResult(newAnswers);
+
+        // 최종 결과를 별도로 저장
+        await saveFinalResult(sessionId, newAnswers, result);
+
         router.push(`/result/${result}`);
       }
     }, 600);
@@ -347,7 +419,7 @@ export default function Quiz() {
           <div className="mb-8">
             <div className="relative">
               <div
-                className={`absolute -inset-4 bg-gradient-to-r ${currentQ?.bgGradient} rounded-6xl blur-xl opacity-20`}
+                className={`absolute -inset-4 bg-gradient-to-r ${currentQ?.bgGradient} rounded-6xl blur-3xl opacity-20`}
               ></div>
               <div className="relative">
                 <div className="text-7xl mb-8 animate-float">🗿</div>
@@ -432,7 +504,7 @@ export default function Quiz() {
             isLoaded ? "animate-slide-up" : "opacity-0"
           }`}
         >
-          <div className="glass-effect inline-block px-8 py-4 rounded-full">
+          <div className="inline-block px-8 py-4 rounded-full">
             <p className="text-white/90 font-medium">
               💡 직감적으로 선택해주세요! 정답은 없어요 😊
             </p>

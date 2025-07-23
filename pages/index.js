@@ -138,8 +138,8 @@ export default function Home() {
             isLoaded ? "animate-scale-in" : "opacity-0"
           }`}
         >
-          <div className="relative inline-block">
-            <div className="absolute -inset-4 bg-gradient-to-r from-jeju-coral to-jeju-lavender rounded-6xl blur-lg opacity-20 animate-pulse-soft"></div>
+          <div className="relative inline-block mb-4">
+            <div className="absolute -inset-2 bg-gradient-to-r from-jeju-coral to-jeju-lavender rounded-6xl blur-lg opacity-20 animate-pulse-soft"></div>
             <Link href="/quiz">
               <button className="relative btn-primary text-xl px-12 py-6 font-black hover-glow jeju-wave">
                 ✨ 테스트 시작하기 ✨
