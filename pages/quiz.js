@@ -500,7 +500,7 @@ export default function Quiz() {
 
         {/* 하단 안내 */}
         <div
-          className={`text-center mt-20 ${
+          className={`text-center mt-10 ${
             isLoaded ? "animate-slide-up" : "opacity-0"
           }`}
         >
