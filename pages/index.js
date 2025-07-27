@@ -197,38 +197,16 @@ export default function Home() {
         <div className="text-center">
           <div className="relative rounded-3xl p-2">
             {/* 캐러셀 메인 슬라이드 */}
-            <div className="relative h-96 mb-60">
-              <div
-                className="flex  transition-transform duration-1000 ease-in-out h-full"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-              >
-                {previewTypes.map((type, index) => (
-                  <div
-                    key={type.code}
-                    className="w-full  flex-shrink-0 px-2 py-2"
-                  >
-                    <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
-                      {/* 결과 이미지 */}
-                      <div className="relative">
-                        <div className="relative rounded-4xl h-full">
-                          <Image
-                            src={getResultImagePath(type.code)}
-                            alt={`${type.title} 결과 이미지`}
-                            width={400}
-                            height={300}
-                            className="w-full h-full object-cover rounded-3xl"
-                            priority={index === 0}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div
+              className={`text-8xl mb-8 animate-float ${
+                isLoaded ? "animate-scale-in" : ""
+              }`}
+            >
+              🗿
             </div>
           </div>
           <div
-            className={`mb-6 ${isLoaded ? "animate-slide-up" : "opacity-0"}`}
+            className={`mb-2 ${isLoaded ? "animate-slide-up" : "opacity-0"}`}
           >
             <h1 className="text-4xl md:text-6xl font-black leading-tight">
               <span className="block  text-gradient-jeju animate-gradient">

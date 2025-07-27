@@ -505,8 +505,8 @@ export default function Quiz() {
           }`}
         >
           <div className="inline-block px-8 py-4 rounded-full">
-            <p className="text-white/90 font-medium">
-              💡 직감적으로 선택해주세요! 정답은 없어요 😊
+            <p className="text-white/90 font-small">
+              직감적으로 선택해주세요! 정답은 없어요 😊
             </p>
           </div>
         </div>
