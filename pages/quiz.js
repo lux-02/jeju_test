@@ -235,6 +235,30 @@ export default function Quiz() {
     setSessionId(newSessionId);
   }, []);
 
+  // 뒤로가기 함수 추가
+  const handleGoBack = () => {
+    if (currentQuestion === 0) {
+      // 첫 번째 질문에서는 홈으로
+      router.push("/");
+    } else {
+      // 이전 질문으로
+      const previousQuestion = currentQuestion - 1;
+      const currentAxis = QUESTIONS[previousQuestion].axis;
+
+      // 이전 답변 제거
+      const newAnswers = { ...answers };
+      if (newAnswers[currentAxis] && newAnswers[currentAxis].length > 0) {
+        newAnswers[currentAxis].pop(); // 마지막 답변 제거
+        if (newAnswers[currentAxis].length === 0) {
+          delete newAnswers[currentAxis]; // 빈 배열이면 키 자체 삭제
+        }
+      }
+
+      setAnswers(newAnswers);
+      setCurrentQuestion(previousQuestion);
+    }
+  };
+
   // Supabase에 퀴즈 응답을 저장하는 함수
   const saveQuizResponse = async (
     sessionId,
@@ -309,7 +333,7 @@ export default function Quiz() {
 
     setIsAnimating(true);
 
-    // 다음 질문으로 이동 또는 결과 페이지로
+    // 다음 질문으로 이동 또는 결과 페이지로 (600ms → 300ms로 변경)
     setTimeout(async () => {
       if (currentQuestion < QUESTIONS.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
@@ -323,7 +347,7 @@ export default function Quiz() {
 
         router.push(`/result/${result}`);
       }
-    }, 600);
+    }, 300); // 600ms에서 300ms로 변경
   };
 
   const calculateResult = (answers) => {
@@ -364,20 +388,23 @@ export default function Quiz() {
       </Head>
 
       <main className="container mx-auto px-4 py-8 min-h-screen">
-        {/* 헤더 */}
+        {/* 헤더 - 뒤로가기 버튼으로 변경 */}
         <div
           className={`flex items-center justify-between mb-8 ${
             isLoaded ? "animate-slide-up" : "opacity-0"
           }`}
         >
-          <Link href="/">
-            <div className="group flex items-center text-white/80 hover:text-white transition-colors cursor-pointer">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mr-3 group-hover:bg-white/30 transition-colors">
-                <span className="text-xl">←</span>
-              </div>
-              <span className="font-medium">처음으로</span>
+          <button
+            onClick={handleGoBack}
+            className="group flex items-center text-white/80 hover:text-white transition-colors cursor-pointer"
+          >
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mr-3 group-hover:bg-white/30 transition-colors">
+              <span className="text-xl">←</span>
             </div>
-          </Link>
+            <span className="font-medium">
+              {currentQuestion === 0 ? "처음으로" : "이전 질문"}
+            </span>
+          </button>
 
           <div className="glass-effect px-4 py-2 rounded-full">
             <span className="text-white font-bold">
@@ -422,7 +449,6 @@ export default function Quiz() {
                 className={`absolute -inset-4 bg-gradient-to-r ${currentQ?.bgGradient} rounded-6xl blur-3xl opacity-20`}
               ></div>
               <div className="relative">
-                <div className="text-7xl mb-8 animate-float">🗿</div>
                 <div className="glass-effect inline-block px-6 py-3 rounded-full mb-6">
                   <span className="text-white font-bold text-lg">
                     {currentQuestion + 1}번째 질문
