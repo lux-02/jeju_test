@@ -1,3 +1,46 @@
+import fs from "fs";
+import path from "path";
+
+// CSV 데이터를 파싱하는 함수
+const parseCSV = (csvText) => {
+  const lines = csvText.trim().split("\n");
+  const headers = lines[0].split(",");
+  const data = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(",");
+    const item = {};
+    headers.forEach((header, index) => {
+      item[header.trim()] = values[index] ? values[index].trim() : "";
+    });
+    data.push(item);
+  }
+
+  return data;
+};
+
+// CSV 파일들을 읽어서 파싱하는 함수
+const loadCSVData = () => {
+  try {
+    const tourspotPath = path.join(process.cwd(), "lib", "tourspot.csv");
+    const restaurantPath = path.join(process.cwd(), "lib", "restaurant.csv");
+    const hotelPath = path.join(process.cwd(), "lib", "hotel.csv");
+
+    const tourspotCSV = fs.readFileSync(tourspotPath, "utf-8");
+    const restaurantCSV = fs.readFileSync(restaurantPath, "utf-8");
+    const hotelCSV = fs.readFileSync(hotelPath, "utf-8");
+
+    return {
+      tourspots: parseCSV(tourspotCSV),
+      restaurants: parseCSV(restaurantCSV),
+      hotels: parseCSV(hotelCSV),
+    };
+  } catch (error) {
+    console.error("CSV 파일 로드 실패:", error);
+    return { tourspots: [], restaurants: [], hotels: [] };
+  }
+};
+
 // AI 맞춤 여행 코스 생성 API
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -5,8 +48,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { userType, character, description, filters, selectedSpots } =
-      req.body;
+    const {
+      userType,
+      character,
+      description,
+      filters,
+      filterText,
+      selectedSpots,
+      csvSpots,
+      spotType,
+      preferences,
+    } = req.body;
 
     // 입력 데이터 검증
     if (!userType || !character) {
@@ -22,82 +74,119 @@ export default async function handler(req, res) {
         .json({ error: "Gemini API 키가 설정되지 않았습니다." });
     }
 
-    // AI 프롬프트 생성
+    // CSV 데이터 로드 (그라운드 지식으로 활용)
+    const csvData = loadCSVData();
+
+    // 랜덤화 함수 - 배열을 섞어서 매번 다른 결과 생성
+    const shuffleArray = (array) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+
+    // 선택된 지역에 따라 데이터 필터링 및 랜덤화
+    const regionFilter =
+      filterText.region === "전체" ? null : filterText.region;
+
+    const filteredTourspots = regionFilter
+      ? shuffleArray(
+          csvData.tourspots.filter((spot) => spot.지역 === regionFilter)
+        ).slice(0, 8)
+      : shuffleArray(csvData.tourspots).slice(0, 12);
+
+    const filteredRestaurants = regionFilter
+      ? shuffleArray(
+          csvData.restaurants.filter(
+            (restaurant) => restaurant.지역 === regionFilter
+          )
+        ).slice(0, 6)
+      : shuffleArray(csvData.restaurants).slice(0, 8);
+
+    const filteredHotels = regionFilter
+      ? shuffleArray(
+          csvData.hotels.filter((hotel) => hotel.지역 === regionFilter)
+        ).slice(0, 4)
+      : shuffleArray(csvData.hotels).slice(0, 6);
+
+    // CSV 명소들과 기존 명소들 결합
+    const allAvailableSpots = [
+      ...selectedSpots,
+      ...csvSpots.map((spot) => ({
+        name: spot.name,
+        address: spot.address,
+        type: spot.type,
+      })),
+    ];
+
+    // AI 프롬프트 생성 - 간소화된 버전으로 응답 길이 최적화
     const prompt = `
-당신은 제주도 여행 전문가입니다. 다음 정보를 바탕으로 개인 맞춤 1박 2일 제주 여행 코스를 상세히 작성해주세요.
+제주도 1박 2일 여행 코스를 JSON으로 작성해주세요.
 
-**여행자 정보:**
-- 돌하르방 유형: ${userType}
-- 캐릭터: ${character}
-- 성향 설명: ${description}
+여행자: ${userType} (${character})
+조건: ${filterText.region} / ${filterText.mood} / ${filterText.weather} / ${
+      filterText.companion
+    }
+생성ID: ${Date.now()}-${Math.random().toString(36).substr(2, 9)}
 
-**선택된 필터:**
-- 지역: ${filters.region === "all" ? "전체" : filters.region}
-- 감정/무드: ${filters.mood === "all" ? "전체" : filters.mood}
-- 날씨: ${filters.weather === "all" ? "전체" : filters.weather}
-- 동행자: ${filters.companion === "all" ? "전체" : filters.companion}
+📍 중요: 매번 다른 장소와 다양한 코스를 제안해주세요!
 
-**추천된 관심 장소들:**
-${selectedSpots
-  .map((spot) => `- ${spot.name} (${spot.region}, ${spot.mood})`)
+🏞️ 관광지 옵션 (정확한 주소 포함):
+${filteredTourspots
+  .slice(0, 6) // 더 많은 옵션 제공
+  .map((s, idx) => `${idx + 1}. ${s.도로명주소} (인기점수: ${s.인기점수})`)
   .join("\n")}
 
-**요청사항:**
-1. 위 여행자의 성향에 완벽하게 맞는 1박 2일 코스를 작성해주세요
-2. 실제 제주도 장소들을 기반으로 구체적이고 현실적인 일정을 만들어주세요
-3. 시간대별로 상세한 일정을 제공해주세요
-4. 각 장소에서의 예상 소요시간과 이동시간도 포함해주세요
-5. 식당, 카페, 숙소 추천도 포함해주세요
-6. 해당 여행자 유형이 좋아할만한 특별한 체험이나 팁도 추가해주세요
+🍽️ 식당 옵션 (정확한 주소 포함):
+${filteredRestaurants
+  .slice(0, 4) // 더 많은 옵션 제공
+  .map(
+    (r, idx) =>
+      `${idx + 1}. ${r.제목}: ${r.도로명주소} (인기점수: ${r.인기점수})`
+  )
+  .join("\n")}
 
-**응답 형식:**
-다음 JSON 형식으로만 응답해주세요:
+🏨 숙소 옵션 (정확한 주소 포함):
+${filteredHotels
+  .slice(0, 3) // 더 많은 옵션 제공
+  .map(
+    (h, idx) =>
+      `${idx + 1}. ${h.제목}: ${h.도로명주소} (인기점수: ${h.인기점수})`
+  )
+  .join("\n")}
 
+JSON 형식:
 {
-  "title": "맞춤 여행 코스 제목",
-  "summary": "코스 한 줄 요약",
+  "title": "여행 제목",
+  "summary": "한 줄 요약",
   "day1": {
-    "morning": [
-      {
-        "time": "09:00",
-        "activity": "활동명",
-        "location": "장소명",
-        "duration": "소요시간",
-        "description": "상세 설명",
-        "tip": "여행자 유형별 특별 팁"
-      }
-    ],
-    "afternoon": [...],
-    "evening": [...]
+    "morning": [{"time": "09:00", "activity": "활동명", "location": "위 목록의 정확한 도로명주소", "duration": "시간", "description": "설명", "tip": "팁"}],
+    "afternoon": [{"time": "13:00", "activity": "활동명", "location": "위 목록의 정확한 도로명주소", "duration": "시간", "description": "설명", "tip": "팁"}],
+    "evening": [{"time": "18:00", "activity": "활동명", "location": "위 목록의 정확한 도로명주소", "duration": "시간", "description": "설명", "tip": "팁"}]
   },
   "day2": {
-    "morning": [...],
-    "afternoon": [...]
+    "morning": [{"time": "09:00", "activity": "활동명", "location": "위 목록의 정확한 도로명주소", "duration": "시간", "description": "설명", "tip": "팁"}],
+    "afternoon": [{"time": "13:00", "activity": "활동명", "location": "위 목록의 정확한 도로명주소", "duration": "시간", "description": "설명", "tip": "팁"}]
   },
-  "restaurants": [
-    {
-      "name": "식당명",
-      "type": "식사 종류",
-      "location": "위치",
-      "specialty": "특징",
-      "reason": "추천 이유"
-    }
-  ],
-  "accommodation": {
-    "name": "숙소명",
-    "type": "숙소 유형",
-    "location": "위치",
-    "reason": "추천 이유"
-  },
-  "specialTips": [
-    "여행자 유형에 맞는 특별한 팁들"
-  ],
-  "totalBudget": "예상 총 비용",
-  "transportTips": "교통수단 추천"
+  "restaurants": [{"name": "식당명", "type": "식사 종류", "location": "위 목록의 정확한 도로명주소", "specialty": "메뉴"}],
+  "accommodation": {"name": "숙소명", "type": "숙소 타입", "location": "위 목록의 정확한 도로명주소", "reason": "추천 이유"},
+  "specialTips": ["팁1", "팁2"],
+  "totalBudget": "예산",
+  "transportTips": "교통 정보"
 }
 
-JSON 형식으로만 응답하고, 다른 텍스트는 포함하지 마세요.
-`;
+**중요한 요구사항:**
+1. 위 데이터의 정확한 도로명주소를 location 필드에 반드시 포함하세요
+2. 관광지/식당/숙소는 반드시 위 목록에서 선택하여 사용하세요  
+3. ${spotType} 성향에 맞는 코스를 만들어주세요
+4. 각 장소의 정확한 주소와 인기점수를 활용하세요
+5. 🎲 매번 다른 조합의 장소들을 선택해서 다양한 코스를 만들어주세요
+6. 🌟 창의적이고 독특한 일정 구성으로 차별화된 여행 경험을 제공하세요
+7. 🔀 같은 조건이라도 항상 새로운 장소와 활동을 추천해주세요
+
+JSON만 응답하세요.`;
 
     // Gemini AI API 호출
     const response = await fetch(
@@ -118,10 +207,10 @@ JSON 형식으로만 응답하고, 다른 텍스트는 포함하지 마세요.
             },
           ],
           generationConfig: {
-            temperature: 0.7,
+            temperature: 0.9,
             topK: 40,
             topP: 0.95,
-            maxOutputTokens: 2048,
+            maxOutputTokens: 4096,
           },
         }),
       }
@@ -146,16 +235,38 @@ JSON 형식으로만 응답하고, 다른 텍스트는 포함하지 마세요.
 
     const aiResponse = data.candidates[0].content.parts[0].text;
 
-    // JSON 응답 파싱 시도
+    // JSON 응답 파싱 시도 - 강화된 오류 처리
     let courseData;
     try {
-      // JSON 형식만 추출 (```json ``` 제거)
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      // 응답 정리
+      let cleanResponse = aiResponse.trim();
+
+      // 코드 블록 제거
+      cleanResponse = cleanResponse
+        .replace(/```json\s*/, "")
+        .replace(/```\s*$/, "");
+
+      // JSON 블록만 추출
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        courseData = JSON.parse(jsonMatch[0]);
+        let jsonStr = jsonMatch[0];
+
+        // 불완전한 JSON 복구 시도
+        if (!jsonStr.endsWith("}")) {
+          // 마지막 불완전한 부분 제거하고 닫기
+          jsonStr = jsonStr.replace(/,\s*[^}]*$/, "") + "}";
+        }
+
+        courseData = JSON.parse(jsonStr);
       } else {
-        courseData = JSON.parse(aiResponse);
+        courseData = JSON.parse(cleanResponse);
       }
+
+      // 필수 필드 검증 및 보완
+      if (!courseData.day1?.morning)
+        courseData.day1 = { morning: [], afternoon: [], evening: [] };
+      if (!courseData.day2?.morning)
+        courseData.day2 = { morning: [], afternoon: [] };
     } catch (parseError) {
       console.error("JSON 파싱 오류:", parseError);
       console.log("AI 원본 응답:", aiResponse);
