@@ -206,12 +206,6 @@ export default function Home() {
               >
                 여행유형 테스트
               </Link>
-              <Link
-                href="/restaurant"
-                className="text-white/80 hover:text-white transition-colors"
-              >
-                맛집 리스트
-              </Link>
             </div>
           </div>
         </div>
