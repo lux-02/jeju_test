@@ -239,30 +239,55 @@ a {
 }
 
 /* 로딩 애니메이션 */
-.loading-dots {
-  display: inline-block;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.loading-dots::after {
-  content: "";
-  animation: loadingDots 1.5s steps(4, end) infinite;
-}
-
-@keyframes loadingDots {
+@keyframes pulse {
   0%,
-  20% {
-    content: "";
+  100% {
+    opacity: 1;
   }
-  40% {
-    content: ".";
+  50% {
+    opacity: 0.5;
   }
-  60% {
-    content: "..";
-  }
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  53%,
   80%,
   100% {
-    content: "...";
+    transform: translate3d(0, 0, 0);
   }
+  40%,
+  43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+.loading-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.loading-bounce {
+  animation: bounce 1s infinite;
 }
 
 /* 제주 특별 효과 */

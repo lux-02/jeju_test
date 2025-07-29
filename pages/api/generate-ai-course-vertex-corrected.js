@@ -118,15 +118,50 @@ const loadData = () => {
     const restaurantJSON = fs.readFileSync(restaurantPath, "utf-8");
     const hotelCSV = fs.readFileSync(hotelPath, "utf-8");
 
+    // JSON 데이터 파싱
     const restaurantData = JSON.parse(restaurantJSON);
-    const restaurants = restaurantData.bookmarkList.map((item) => ({
-      제목: item.name,
-      도로명주소: item.address,
-      인기점수: "높음",
-      지역: item.address.includes("서귀포") ? "서귀포" : "제주",
-      메모: item.memo || "",
-      타입: item.mcidName || "음식점",
-    }));
+    const restaurants = restaurantData.bookmarkList.map((item) => {
+      // 지역 분류 로직 개선
+      let region = "제주";
+      if (item.address.includes("서귀포")) {
+        region = "서귀포";
+      } else if (item.address.includes("제주시")) {
+        region = "제주";
+      } else if (
+        item.address.includes("한림") ||
+        item.address.includes("애월")
+      ) {
+        region = "제주";
+      }
+
+      // 인기점수 계산 (메모 길이, 타입 등을 고려)
+      let popularityScore = "보통";
+      if (item.memo && item.memo.length > 10) {
+        popularityScore = "높음";
+      }
+      if (
+        item.memo &&
+        (item.memo.includes("맛집") ||
+          item.memo.includes("👍") ||
+          item.memo.includes("추천"))
+      ) {
+        popularityScore = "매우높음";
+      }
+
+      return {
+        제목: item.name,
+        도로명주소: item.address,
+        인기점수: popularityScore,
+        지역: region,
+        메모: item.memo || "",
+        타입: item.mcidName || "음식점",
+        카테고리: item.mcid || "DINING",
+        좌표: {
+          x: item.px,
+          y: item.py,
+        },
+      };
+    });
 
     return {
       tourspots: parseCSV(tourspotCSV),
@@ -232,13 +267,15 @@ ${finalSpots
   )
   .join("\n")}
 
-🍽️ 식당 (유사도 기반 추천):
+🍽️ 식당 (유사도 기반 추천) - 반드시 이 목록에서만 선택하세요:
 ${finalRestaurants
   .map(
     (r, idx) =>
       `${idx + 1}. ${r.제목}: ${r.도로명주소} (인기점수: ${
         r.인기점수
-      }, 유사도: ${r.유사도점수?.toFixed(2) || "N/A"})`
+      }, 유사도: ${r.유사도점수?.toFixed(2) || "N/A"}, 타입: ${r.타입}, 메모: ${
+        r.메모
+      })`
   )
   .join("\n")}
 
@@ -276,10 +313,12 @@ JSON 형식:
 **중요한 요구사항:**
 1. 위 AI 검색 결과의 정확한 도로명주소를 location 필드에 반드시 포함하세요
 2. 유사도 점수가 높은 장소들을 우선적으로 선택하세요
-3. ${spotType} 성향에 맞는 코스를 만들어주세요
-4. 🎯 검색 품질이 높은 장소들을 중심으로 일정을 구성하세요
-5. 🌟 창의적이고 독특한 일정 구성으로 차별화된 여행 경험을 제공하세요
-6. 🔍 Vertex AI Search의 검색 결과를 최대한 활용하여 정확한 추천을 제공하세요
+3. 🍽️ 식당 정보는 반드시 위 식당 목록에서만 선택하여 사용하세요 - 절대 임의로 생성하지 마세요
+4. ${spotType} 성향에 맞는 코스를 만들어주세요
+5. 🎯 검색 품질이 높은 장소들을 중심으로 일정을 구성하세요
+6. 🌟 창의적이고 독특한 일정 구성으로 차별화된 여행 경험을 제공하세요
+7. 🔍 Vertex AI Search의 검색 결과를 최대한 활용하여 정확한 추천을 제공하세요
+8. ⚠️ 식당명과 주소는 반드시 제공된 데이터에서 정확히 복사하여 사용하세요
 
 JSON만 응답하세요.`;
 

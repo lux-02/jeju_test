@@ -32,14 +32,48 @@ const loadData = () => {
 
     // JSON 데이터 파싱
     const restaurantData = JSON.parse(restaurantJSON);
-    const restaurants = restaurantData.bookmarkList.map((item) => ({
-      제목: item.name,
-      도로명주소: item.address,
-      인기점수: "높음", // JSON에는 인기점수가 없으므로 기본값 설정
-      지역: item.address.includes("서귀포") ? "서귀포" : "제주",
-      메모: item.memo || "",
-      타입: item.mcidName || "음식점",
-    }));
+    const restaurants = restaurantData.bookmarkList.map((item) => {
+      // 지역 분류 로직 개선
+      let region = "제주";
+      if (item.address.includes("서귀포")) {
+        region = "서귀포";
+      } else if (item.address.includes("제주시")) {
+        region = "제주";
+      } else if (
+        item.address.includes("한림") ||
+        item.address.includes("애월")
+      ) {
+        region = "제주";
+      }
+
+      // 인기점수 계산 (메모 길이, 타입 등을 고려)
+      let popularityScore = "보통";
+      if (item.memo && item.memo.length > 10) {
+        popularityScore = "높음";
+      }
+      if (
+        item.memo &&
+        (item.memo.includes("맛집") ||
+          item.memo.includes("👍") ||
+          item.memo.includes("추천"))
+      ) {
+        popularityScore = "매우높음";
+      }
+
+      return {
+        제목: item.name,
+        도로명주소: item.address,
+        인기점수: popularityScore,
+        지역: region,
+        메모: item.memo || "",
+        타입: item.mcidName || "음식점",
+        카테고리: item.mcid || "DINING",
+        좌표: {
+          x: item.px,
+          y: item.py,
+        },
+      };
+    });
 
     return {
       tourspots: parseCSV(tourspotCSV),
@@ -150,12 +184,14 @@ ${filteredTourspots
   .map((s, idx) => `${idx + 1}. ${s.도로명주소} (인기점수: ${s.인기점수})`)
   .join("\n")}
 
-🍽️ 식당 옵션 (정확한 주소 포함):
+🍽️ 식당 옵션 (정확한 주소 포함) - 반드시 이 목록에서만 선택하세요:
 ${filteredRestaurants
-  .slice(0, 4) // 더 많은 옵션 제공
+  .slice(0, 6) // 더 많은 옵션 제공
   .map(
     (r, idx) =>
-      `${idx + 1}. ${r.제목}: ${r.도로명주소} (인기점수: ${r.인기점수})`
+      `${idx + 1}. ${r.제목}: ${r.도로명주소} (인기점수: ${r.인기점수}, 타입: ${
+        r.타입
+      }, 메모: ${r.메모})`
   )
   .join("\n")}
 
@@ -191,11 +227,13 @@ JSON 형식:
 **중요한 요구사항:**
 1. 위 데이터의 정확한 도로명주소를 location 필드에 반드시 포함하세요
 2. 관광지/식당/숙소는 반드시 위 목록에서 선택하여 사용하세요  
-3. ${spotType} 성향에 맞는 코스를 만들어주세요
-4. 각 장소의 정확한 주소와 인기점수를 활용하세요
-5. 🎲 매번 다른 조합의 장소들을 선택해서 다양한 코스를 만들어주세요
-6. 🌟 창의적이고 독특한 일정 구성으로 차별화된 여행 경험을 제공하세요
-7. 🔀 같은 조건이라도 항상 새로운 장소와 활동을 추천해주세요
+3. 🍽️ 식당 정보는 반드시 위 식당 목록에서만 선택하여 사용하세요 - 절대 임의로 생성하지 마세요
+4. ${spotType} 성향에 맞는 코스를 만들어주세요
+5. 각 장소의 정확한 주소와 인기점수를 활용하세요
+6. 🎲 매번 다른 조합의 장소들을 선택해서 다양한 코스를 만들어주세요
+7. 🌟 창의적이고 독특한 일정 구성으로 차별화된 여행 경험을 제공하세요
+8. 🔀 같은 조건이라도 항상 새로운 장소와 활동을 추천해주세요
+9. ⚠️ 식당명과 주소는 반드시 제공된 데이터에서 정확히 복사하여 사용하세요
 
 JSON만 응답하세요.`;
 
