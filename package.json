@@ -9,7 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google-cloud/aiplatform": "^5.1.0",
+    "@google-cloud/discoveryengine": "^2.4.0",
+    "@google-cloud/vertexai": "^1.10.0",
     "@supabase/supabase-js": "^2.52.0",
+    "google-auth-library": "^10.2.0",
     "html2canvas": "^1.4.1",
     "next": "15.4.2",
     "react": "19.1.0",
