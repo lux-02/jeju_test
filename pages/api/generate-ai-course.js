@@ -19,24 +19,35 @@ const parseCSV = (csvText) => {
   return data;
 };
 
-// CSV 파일들을 읽어서 파싱하는 함수
-const loadCSVData = () => {
+// CSV와 JSON 파일들을 읽어서 파싱하는 함수
+const loadData = () => {
   try {
     const tourspotPath = path.join(process.cwd(), "lib", "tourspot.csv");
-    const restaurantPath = path.join(process.cwd(), "lib", "restaurant.csv");
+    const restaurantPath = path.join(process.cwd(), "lib", "restaurant.json");
     const hotelPath = path.join(process.cwd(), "lib", "hotel.csv");
 
     const tourspotCSV = fs.readFileSync(tourspotPath, "utf-8");
-    const restaurantCSV = fs.readFileSync(restaurantPath, "utf-8");
+    const restaurantJSON = fs.readFileSync(restaurantPath, "utf-8");
     const hotelCSV = fs.readFileSync(hotelPath, "utf-8");
+
+    // JSON 데이터 파싱
+    const restaurantData = JSON.parse(restaurantJSON);
+    const restaurants = restaurantData.bookmarkList.map((item) => ({
+      제목: item.name,
+      도로명주소: item.address,
+      인기점수: "높음", // JSON에는 인기점수가 없으므로 기본값 설정
+      지역: item.address.includes("서귀포") ? "서귀포" : "제주",
+      메모: item.memo || "",
+      타입: item.mcidName || "음식점",
+    }));
 
     return {
       tourspots: parseCSV(tourspotCSV),
-      restaurants: parseCSV(restaurantCSV),
+      restaurants: restaurants,
       hotels: parseCSV(hotelCSV),
     };
   } catch (error) {
-    console.error("CSV 파일 로드 실패:", error);
+    console.error("데이터 파일 로드 실패:", error);
     return { tourspots: [], restaurants: [], hotels: [] };
   }
 };
@@ -74,8 +85,8 @@ export default async function handler(req, res) {
         .json({ error: "Gemini API 키가 설정되지 않았습니다." });
     }
 
-    // CSV 데이터 로드 (그라운드 지식으로 활용)
-    const csvData = loadCSVData();
+    // 데이터 로드 (그라운드 지식으로 활용)
+    const csvData = loadData();
 
     // 랜덤화 함수 - 배열을 섞어서 매번 다른 결과 생성
     const shuffleArray = (array) => {

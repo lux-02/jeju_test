@@ -97,8 +97,8 @@ export default function Home() {
     },
     {
       emoji: "🍃",
-      name: "힐링형 돌하르방",
-      title: "힐링형 돌하르방",
+      name: "자연형 돌하르방",
+      title: "자연형 돌하르방",
       description: "계획적으로 움직이되, 조용한 힐링이 최고의 여정",
       character: "성산일출봉 아래서 명상하다 환청 듣는 돌하르방",
       color: "from-jeju-green to-jeju-mint",
@@ -192,7 +192,32 @@ export default function Home() {
         <meta name="twitter:card" content="summary_large_image" />
       </Head>
 
-      <main className="container mx-auto px-4 py-8 min-h-screen">
+      {/* 네비게이션 */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <Link href="/" className="text-white font-bold text-xl">
+              🗿 제주맹글이
+            </Link>
+            <div className="flex space-x-6">
+              <Link
+                href="/"
+                className="text-white font-bold hover:text-white transition-colors"
+              >
+                여행유형 테스트
+              </Link>
+              <Link
+                href="/restaurant"
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                맛집 리스트
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="container mx-auto px-4 py-8 min-h-screen pt-20">
         {/* 메인 히어로 섹션 */}
         <div className="text-center">
           <div className="relative rounded-3xl p-2">
