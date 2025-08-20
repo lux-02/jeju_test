@@ -378,13 +378,47 @@ export default function Quiz() {
   return (
     <div className="min-h-screen gradient-bg">
       <Head>
-        <title>제주 돌하르방 여행유형 테스트 - Q{currentQuestion + 1}</title>
+        <title>
+          제주맹글이 | 제주 돌하르방 여행유형 테스트 - Q{currentQuestion + 1}/9
+        </title>
         <meta
           name="description"
-          content={`제주여행 성향을 알아보는 트렌디한 밸런스 게임 - ${currentQ?.theme}`}
+          content={`제주여행 성향을 알아보는 트렌디한 밸런스 게임 - ${currentQ?.theme} | 제주도 여행 전 필수 테스트로 나만의 제주 여행 스타일 발견하기`}
         />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+
+        {/* Open Graph */}
+        <meta
+          property="og:title"
+          content={`제주맹글이 | 돌하르방 여행유형 테스트 - ${currentQ?.theme}`}
+        />
+        <meta
+          property="og:description"
+          content="제주도 여행 성향 테스트 진행 중! 나만의 제주 여행 스타일을 찾아보세요"
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.제주맹글이.site/quiz" />
+        <meta
+          property="og:image"
+          content="https://www.제주맹글이.site/favicon.ico"
+        />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary" />
+        <meta
+          name="twitter:title"
+          content={`제주맹글이 | 돌하르방 여행유형 테스트 - ${currentQ?.theme}`}
+        />
+        <meta
+          name="twitter:description"
+          content="제주도 여행 성향 테스트 진행 중!"
+        />
+
+        {/* 추가 SEO */}
+        <meta
+          name="keywords"
+          content="제주도, 제주여행, 돌하르방, 여행유형테스트, 제주관광, 밸런스게임, 제주여행스타일"
+        />
+        <link rel="canonical" href="https://www.제주맹글이.site/quiz" />
       </Head>
 
       <main className="container mx-auto px-4 py-8 min-h-screen">

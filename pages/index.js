@@ -173,23 +173,169 @@ export default function Home() {
     <div className="min-h-screen">
       <Head>
         <title>
-          제주 돌하르방 여행유형 테스트 ✨ 나만의 제주 여행 스타일 찾기
+          제주맹글이 | 제주 돌하르방 여행유형 테스트 ✨ 나만의 제주 여행 스타일
+          찾기
         </title>
         <meta
           name="description"
-          content="🗿 나는 어떤 돌하르방 여행 유형일까? 9가지 트렌디한 밸런스 게임으로 알아보는 제주여행 성향 테스트! MZ세대를 위한 감성 여행 진단"
+          content="🗿 제주도 여행 전 필수! 나는 어떤 돌하르방 여행 유형일까? 9가지 트렌디한 밸런스 게임으로 알아보는 제주여행 성향 테스트! 제주 액티비티, 제주 맛집, 제주 힐링 스팟까지 - MZ세대를 위한 제주 감성 여행 진단"
         />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
 
-        {/* 소셜 미디어 메타 태그 */}
-        <meta property="og:title" content="제주 돌하르방 여행유형 테스트" />
+        {/* Open Graph 메타 태그 */}
+        <meta
+          property="og:title"
+          content="제주맹글이 | 제주 돌하르방 여행유형 테스트"
+        />
         <meta
           property="og:description"
-          content="나만의 제주 여행 스타일을 찾아보세요!"
+          content="제주도 여행 전 필수! 나만의 제주 여행 스타일을 찾아보세요! 돌하르방 여행유형 테스트로 제주 액티비티, 맛집, 힐링 스팟 추천받기"
         />
         <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.제주맹글이.site/" />
+        <meta
+          property="og:image"
+          content="https://www.제주맹글이.site/favicon.ico"
+        />
+        <meta property="og:image:alt" content="제주맹글이 돌하르방 캐릭터" />
+        <meta property="og:locale" content="ko_KR" />
+        <meta property="og:site_name" content="제주맹글이" />
+
+        {/* Twitter Card 메타 태그 */}
         <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="제주맹글이 | 제주 돌하르방 여행유형 테스트"
+        />
+        <meta
+          name="twitter:description"
+          content="제주도 여행 전 필수! 나만의 제주 여행 스타일을 찾아보세요!"
+        />
+        <meta
+          name="twitter:image"
+          content="https://www.제주맹글이.site/favicon.ico"
+        />
+
+        {/* 추가 SEO 메타 태그 */}
+        <meta name="geo.region" content="KR-49" />
+        <meta name="geo.placename" content="제주도" />
+        <meta name="geo.position" content="33.499621;126.531219" />
+        <meta name="ICBM" content="33.499621, 126.531219" />
+
+        {/* 구조화된 데이터 (JSON-LD) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "제주맹글이",
+              alternateName: "제주 돌하르방 여행유형 테스트",
+              description:
+                "제주도 여행 전 필수! 나는 어떤 돌하르방 여행 유형일까? 9가지 트렌디한 밸런스 게임으로 알아보는 제주여행 성향 테스트",
+              url: "https://www.제주맹글이.site/",
+              applicationCategory: "TravelApplication",
+              operatingSystem: "Web Browser",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "KRW",
+              },
+              author: {
+                "@type": "Organization",
+                name: "제주맹글이",
+              },
+              publisher: {
+                "@type": "Organization",
+                name: "제주맹글이",
+                logo: {
+                  "@type": "ImageObject",
+                  url: "https://www.제주맹글이.site/favicon.ico",
+                },
+              },
+              about: [
+                {
+                  "@type": "Place",
+                  name: "제주도",
+                  geo: {
+                    "@type": "GeoCoordinates",
+                    latitude: 33.499621,
+                    longitude: 126.531219,
+                  },
+                },
+                {
+                  "@type": "Thing",
+                  name: "여행",
+                  sameAs: "https://ko.wikipedia.org/wiki/여행",
+                },
+                {
+                  "@type": "Thing",
+                  name: "돌하르방",
+                  sameAs: "https://ko.wikipedia.org/wiki/돌하르방",
+                },
+              ],
+              keywords:
+                "제주도, 제주여행, 돌하르방, 여행유형테스트, 제주관광, 제주액티비티, 제주맛집, 제주힐링",
+              inLanguage: "ko",
+              potentialAction: {
+                "@type": "PlayAction",
+                target: "https://www.제주맹글이.site/quiz",
+              },
+            }),
+          }}
+        />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Quiz",
+              name: "제주 돌하르방 여행유형 테스트",
+              description:
+                "9가지 밸런스 게임으로 알아보는 나만의 제주 여행 스타일",
+              about: {
+                "@type": "Place",
+                name: "제주도",
+                alternateName: "Jeju Island",
+              },
+              educationalLevel: "beginner",
+              timeRequired: "PT5M",
+              numberOfQuestions: 9,
+              assesses: "여행 성향",
+              hasPart: previewTypes.map((type, index) => ({
+                "@type": "Question",
+                name: `질문 ${index + 1}`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: type.name,
+                },
+              })),
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "KRW",
+              },
+            }),
+          }}
+        />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "제주맹글이",
+                  item: "https://www.제주맹글이.site/",
+                },
+              ],
+            }),
+          }}
+        />
       </Head>
 
       {/* 네비게이션 */}
