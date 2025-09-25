@@ -4,6 +4,15 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { TYPE_MAPPING } from "../../lib/typeMapping";
+// React Icons 추가
+import {
+  HiVolumeOff,
+  HiVolumeUp,
+  HiPlay,
+  HiPause,
+  HiChevronLeft,
+  HiChevronRight,
+} from "react-icons/hi";
 
 // 8가지 돌하르방 유형 상세 정보
 const RESULT_TYPES = {
@@ -196,6 +205,18 @@ export default function ResultPage() {
   // 캐러셀 상태
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+
+  // 영상 컨트롤 상태
+  const [videoStates, setVideoStates] = useState({
+    isPlaying: true,
+    isMuted: true,
+  });
+
+  // 클릭 인디케이터 상태
+  const [clickIndicator, setClickIndicator] = useState({
+    show: false,
+    isPlay: false,
+  });
 
   const resultData = result ? RESULT_TYPES[result] : null;
   const resultName = result ? TYPE_MAPPING[result] : "";
@@ -430,7 +451,30 @@ export default function ResultPage() {
 
           {/* 결과 영상/이미지 */}
           <div className="relative w-full max-w-lg mx-auto mb-8">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-black">
+            <div
+              className="relative rounded-2xl overflow-hidden shadow-2xl bg-black cursor-pointer group"
+              onClick={(e) => {
+                // 컨트롤 버튼 클릭 시에는 영상 토글 방지
+                if (e.target.closest("button")) return;
+
+                const video = e.currentTarget.querySelector("video");
+                const willPlay = video.paused;
+
+                if (willPlay) {
+                  video.play();
+                  setVideoStates((prev) => ({ ...prev, isPlaying: true }));
+                } else {
+                  video.pause();
+                  setVideoStates((prev) => ({ ...prev, isPlaying: false }));
+                }
+
+                // 클릭 인디케이터 표시
+                setClickIndicator({ show: true, isPlay: willPlay });
+                setTimeout(() => {
+                  setClickIndicator({ show: false, isPlay: false });
+                }, 600);
+              }}
+            >
               {/* 숏폼 영상 */}
               <video
                 className="w-full h-full object-cover"
@@ -461,29 +505,47 @@ export default function ResultPage() {
                 priority
               />
 
+              {/* 유튜브 스타일 클릭 인디케이터 */}
+              {clickIndicator.show && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                  <div className="bg-black/60 backdrop-blur-sm rounded-full p-4 animate-ping">
+                    {clickIndicator.isPlay ? (
+                      <HiPlay className="w-8 h-8 text-white" />
+                    ) : (
+                      <HiPause className="w-8 h-8 text-white" />
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* 영상 컨트롤 오버레이 */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 hover:opacity-100 transition-all duration-300 group">
                 <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    {/* 음소거 토글 버튼 */}
                     <button
                       onClick={(e) => {
                         e.preventDefault();
                         const video = e.target
                           .closest(".relative")
                           .querySelector("video");
-                        if (video.muted) {
-                          video.muted = false;
-                          e.target.textContent = "🔊";
-                        } else {
-                          video.muted = true;
-                          e.target.textContent = "🔇";
-                        }
+                        video.muted = !video.muted;
+                        setVideoStates((prev) => ({
+                          ...prev,
+                          isMuted: video.muted,
+                        }));
                       }}
-                      className="w-8 h-8 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
-                      title="음소거 토글"
+                      className="w-10 h-10 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-jeju-ocean/80 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg border border-white/20"
+                      title={videoStates.isMuted ? "소리 켜기" : "소리 끄기"}
                     >
-                      🔇
+                      {videoStates.isMuted ? (
+                        <HiVolumeOff className="w-4 h-4" />
+                      ) : (
+                        <HiVolumeUp className="w-4 h-4" />
+                      )}
                     </button>
+
+                    {/* 재생/일시정지 버튼 */}
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -492,20 +554,33 @@ export default function ResultPage() {
                           .querySelector("video");
                         if (video.paused) {
                           video.play();
-                          e.target.textContent = "⏸️";
+                          setVideoStates((prev) => ({
+                            ...prev,
+                            isPlaying: true,
+                          }));
                         } else {
                           video.pause();
-                          e.target.textContent = "▶️";
+                          setVideoStates((prev) => ({
+                            ...prev,
+                            isPlaying: false,
+                          }));
                         }
                       }}
-                      className="w-8 h-8 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
-                      title="재생/일시정지"
+                      className="w-10 h-10 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-jeju-green/80 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg border border-white/20"
+                      title={videoStates.isPlaying ? "일시정지" : "재생"}
                     >
-                      ⏸️
+                      {videoStates.isPlaying ? (
+                        <HiPause className="w-4 h-4" />
+                      ) : (
+                        <HiPlay className="w-4 h-4 ml-0.5" />
+                      )}
                     </button>
                   </div>
-                  <div className="bg-black/50 backdrop-blur-sm rounded-full px-3 py-1 text-white text-xs">
-                    ✨ {resultData.name} 미리보기
+
+                  {/* 영상 정보 배지 */}
+                  <div className="bg-gradient-to-r from-black/70 to-black/60 backdrop-blur-sm rounded-full px-4 py-2 text-white text-xs font-medium shadow-lg border border-white/10">
+                    <span className="text-yellow-300 animate-pulse">✨</span>
+                    <span className="ml-1">{resultData.name} 미리보기</span>
                   </div>
                 </div>
               </div>
@@ -793,11 +868,27 @@ export default function ResultPage() {
                       : "opacity-0 transform translate-x-full"
                   }`}
                 >
-                  <Link
-                    href={`/result/${code}`}
-                    className="block w-full h-full group"
+                  <div
+                    className="relative w-full h-full rounded-2xl overflow-hidden cursor-pointer group"
+                    onClick={(e) => {
+                      // 영상 영역 클릭 시 링크 이동 방지하고 재생/정지 토글
+                      e.preventDefault();
+                      e.stopPropagation();
+
+                      const video = e.currentTarget.querySelector("video");
+                      if (video.paused) {
+                        video.play();
+                      } else {
+                        video.pause();
+                      }
+                    }}
+                    onDoubleClick={(e) => {
+                      // 더블클릭 시에는 페이지 이동
+                      e.stopPropagation();
+                      window.location.href = `/result/${code}`;
+                    }}
                   >
-                    <div className="relative w-full h-full rounded-2xl overflow-hidden">
+                    <div className="relative w-full h-full">
                       {/* 배경 영상/이미지 */}
                       <div className="absolute inset-0">
                         {/* 숏폼 영상 */}
@@ -852,9 +943,18 @@ export default function ResultPage() {
                             </span>
                           </div>
                         </div>
+
+                        {/* 캐러셀 전용 페이지 이동 버튼 */}
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <Link href={`/result/${code}`}>
+                            <button className="bg-black/60 backdrop-blur-sm rounded-full p-2 text-white hover:bg-jeju-ocean/80 transition-colors">
+                              <span className="text-xs">자세히 →</span>
+                            </button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </div>
               ))}
             </div>
@@ -862,18 +962,18 @@ export default function ResultPage() {
             {/* 네비게이션 화살표 */}
             <button
               onClick={goToPrevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors z-10"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/60 backdrop-blur-sm hover:bg-jeju-ocean/80 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10 border border-white/20 hover:scale-110 active:scale-95 shadow-lg"
               aria-label="이전 슬라이드"
             >
-              <span className="text-xl">‹</span>
+              <HiChevronLeft className="w-6 h-6" />
             </button>
 
             <button
               onClick={goToNextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors z-10"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/60 backdrop-blur-sm hover:bg-jeju-ocean/80 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10 border border-white/20 hover:scale-110 active:scale-95 shadow-lg"
               aria-label="다음 슬라이드"
             >
-              <span className="text-xl">›</span>
+              <HiChevronRight className="w-6 h-6" />
             </button>
           </div>
         </div>
