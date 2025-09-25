@@ -10,6 +10,17 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+// React Icons 추가
+import {
+  HiPlay,
+  HiStar,
+  HiTrendingUp,
+  HiUsers,
+  HiSparkles,
+  HiChevronLeft,
+  HiChevronRight,
+  HiArrowRight,
+} from "react-icons/hi";
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -365,87 +376,86 @@ export default function Home() {
 
       <main className="container mx-auto px-4 py-8 min-h-screen pt-20">
         {/* 메인 히어로 섹션 */}
-        <div className="text-center">
-          <div className="relative rounded-3xl p-2">
-            {/* 캐러셀 메인 슬라이드 */}
+        <div className="text-center relative px-2 sm:px-4">
+          {/* 배경 효과 - 모바일 최적화 */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-10 left-5 w-20 h-20 sm:w-32 sm:h-32 sm:top-20 sm:left-10 bg-jeju-ocean/20 rounded-full blur-2xl sm:blur-3xl animate-pulse"></div>
             <div
-              className={`text-8xl mb-8 animate-float ${
-                isLoaded ? "animate-scale-in" : ""
-              }`}
-            >
-              🗿
-            </div>
+              className="absolute top-20 right-8 w-24 h-24 sm:w-40 sm:h-40 sm:top-40 sm:right-20 bg-jeju-green/20 rounded-full blur-2xl sm:blur-3xl animate-pulse"
+              style={{ animationDelay: "1s" }}
+            ></div>
+            <div
+              className="absolute bottom-10 left-1/4 w-16 h-16 sm:w-28 sm:h-28 sm:bottom-20 sm:left-1/3 bg-jeju-mint/20 rounded-full blur-2xl sm:blur-3xl animate-pulse"
+              style={{ animationDelay: "2s" }}
+            ></div>
           </div>
-          <div
-            className={`mb-2 ${isLoaded ? "animate-slide-up" : "opacity-0"}`}
-          >
-            <h1 className="text-4xl md:text-6xl font-black leading-tight">
-              <span className="block  text-gradient-jeju animate-gradient">
-                제주맹글이
-              </span>
-              <span className="text-white bg-300%">여행유형 테스트</span>
-            </h1>
 
-            <div className="relative mx-auto max-w-lg">
-              <div className="absolute rounded-4xl blur opacity-25"></div>
-              <div className="relative backdrop-blur-sm p-6 ">
-                <p className="text-md font-medium text-gradient-jeju leading-relaxed">
-                  나는 어떤 돌하르방 여행 유형일까?
-                  <br />
-                  <span className="text-md text-white">
-                    밸런스 게임으로 나만의 여행 성향을 발견!
-                    <br />
-                  </span>
-                </p>
+          <div className="relative z-10">
+            {/* 돌하르방 캐릭터 */}
+            <div className="relative rounded-3xl p-2 sm:mb-8">
+              <div
+                className={`text-7xl sm:text-8xl md:text-9xl mb-4 animate-float cursor-pointer transition-transform active:scale-125 touch-manipulation ${
+                  isLoaded ? "animate-scale-in" : ""
+                }`}
+                onClick={() => {
+                  // 클릭 시 재미있는 효과 - 모바일 최적화
+                  const emoji = document.querySelector(".animate-float");
+                  emoji.style.transform = "scale(1.3) rotate(360deg)";
+                  setTimeout(() => {
+                    emoji.style.transform = "";
+                  }, 600);
+                }}
+              >
+                🗿
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* 시작 버튼 섹션 */}
-        <div
-          className={`text-center mb-10 ${
-            isLoaded ? "animate-scale-in" : "opacity-0"
-          }`}
-        >
-          <div className="relative inline-block mb-4">
-            <div className="absolute -inset-2 rounded-6xl blur-lg opacity-20 animate-pulse-soft"></div>
-            <Link href="/quiz">
-              <button className="relative btn-primary text-xl px-12 py-6 font-black hover-glow jeju-wave">
-                ✨ 테스트 시작하기 ✨
-              </button>
-            </Link>
-          </div>
-        </div>
+            <div
+              className={`mb-6 sm:mb-8 px-2 ${
+                isLoaded ? "animate-slide-up" : "opacity-0"
+              }`}
+            >
+              <h1 className="text-4xl sm:text-5xl md:text-7xl font-black leading-tight mb-4 sm:mb-6">
+                <span className="block text-gradient-jeju animate-gradient">
+                  제주맹글이
+                </span>
+                <span className="text-white bg-300% relative text-3xl sm:text-4xl md:text-6xl">
+                  여행유형 테스트
+                  <HiSparkles className="inline ml-1 sm:ml-2 w-5 h-5 sm:w-6 sm:h-6 text-yellow-300 animate-pulse" />
+                </span>
+              </h1>
 
-        {/* 테스트 안내 */}
-        <div
-          className={`max-w-3xl mx-auto mb-16 ${
-            isLoaded ? "animate-slide-up" : "opacity-0"
-          }`}
-        >
-          <div className="relative">
-            <div className="relative card-glass">
-              <div className="flex flex-col p-4 ">
-                <div className="flex flex-col gap-4 ">
-                  <div className="flex items-center">
-                    <span className="text-white font-medium">
-                      1. 총 9개의 밸런스 게임 질문
+              <div className="relative mx-auto max-w-2xl">
+                <div className="card-glass mb-4 sm:mb-6">
+                  <div className="p-4 sm:p-6 md:p-8">
+                    <p className="text-md sm:text-xl md:text-2xl font-bold text-white leading-relaxed mb-3 sm:mb-4">
+                      나는 어떤 돌하르방 여행 유형일까? 🤔
+                    </p>
+                    <p className="text-sm sm:text-lg text-white/90 leading-relaxed">
+                      밸런스 게임으로 나만의 제주 여행 성향을 발견하고{" "}
+                      <span className="text-jeju-mint font-semibold">
+                        AI 맞춤 코스 추천
+                      </span>
+                      까지 받아보세요!
+                    </p>
+                  </div>
+                </div>
+
+                {/* 특징 배지들 - 모바일 최적화 */}
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-12 sm:mb-8 px-2">
+                  <div className="bg-gradient-to-r from-jeju-ocean/20 to-jeju-green/20 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 border border-white/20">
+                    <span className="text-white text-xs sm:text-sm font-medium">
+                      ⚡ 1분 완료
                     </span>
                   </div>
-                  <div className="flex items-center">
-                    <span className="text-white font-medium">
-                      2. 직감적으로 선택하는 것이 가장 정확
+                  <div className="bg-gradient-to-r from-jeju-green/20 to-jeju-mint/20 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 border border-white/20">
+                    <span className="text-white text-xs sm:text-sm font-medium">
+                      🎯 8가지 유형
                     </span>
                   </div>
-                  <div className="flex items-center">
-                    <span className="text-white font-medium">
-                      3. 정답은 없으니 편안하게 선택
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-white font-medium">
-                      4. 결과는 SNS로 친구들과 공유
+                  <div className="bg-gradient-to-r from-jeju-mint/20 to-jeju-coral/20 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 border border-white/20">
+                    <span className="text-white text-xs sm:text-sm font-medium">
+                      🤖 AI 코스 생성
                     </span>
                   </div>
                 </div>
@@ -454,13 +464,138 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 결과 미리보기 자동 슬라이드 캐러셀 */}
+        {/* 시작 버튼 섹션 */}
         <div
-          className={`max-w-6xl mx-auto mb-16 ${
-            isLoaded ? "animate-slide-up" : "opacity-0"
+          className={`text-center mb-10 sm:mb-16 px-4 ${
+            isLoaded ? "animate-scale-in" : "opacity-0"
           }`}
-          style={{ animationDelay: "0.3s" }}
-        ></div>
+        >
+          <div className="relative inline-block mb-6 sm:mb-8">
+            <div className="absolute -inset-2 sm:-inset-4 bg-gradient-to-r from-jeju-ocean via-jeju-green to-jeju-mint rounded-2xl sm:rounded-3xl blur-xl sm:blur-2xl opacity-30 animate-pulse"></div>
+            <Link href="/quiz">
+              <button className="relative bg-gradient-to-r from-jeju-ocean to-jeju-green hover:from-jeju-green hover:to-jeju-ocean text-white text-lg sm:text-xl md:text-2xl px-8 py-4 sm:px-12 sm:py-5 md:px-16 md:py-6 rounded-2xl sm:rounded-3xl font-black transition-all duration-300 transform active:scale-95 hover:scale-105 shadow-2xl group touch-manipulation">
+                <span className="flex items-center justify-center gap-2 sm:gap-3">
+                  <HiPlay className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
+                  테스트 시작하기
+                  <HiSparkles className="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-spin" />
+                </span>
+              </button>
+            </Link>
+          </div>
+
+          {/* 통계 미니 카드 - 모바일 최적화 */}
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 md:gap-8 text-white/80">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <HiUsers className="w-4 h-4 sm:w-5 sm:h-5 text-jeju-mint" />
+              <span className="text-xs sm:text-sm font-medium">
+                {statsData?.totalResponses || 0}명 참여
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <HiStar className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
+              <span className="text-xs sm:text-sm font-medium">평점 4.9</span>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <HiTrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-jeju-coral" />
+              <span className="text-xs sm:text-sm font-medium">
+                실시간 인기
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 결과 미리보기 자동 슬라이드 캐러셀 */}
+
+        <div className="mb-10">
+          <div className="relative">
+            {/* 메인 캐러셀 영역 - 모바일 최적화 */}
+            <div className="relative h-72 sm:h-80 md:h-96 overflow-hidden rounded-xl sm:rounded-2xl">
+              {previewTypes.map((type, index) => (
+                <div
+                  key={type.code}
+                  className={`absolute inset-0 transition-all duration-700 ease-in-out ${
+                    index === currentSlide
+                      ? "opacity-100 transform translate-x-0"
+                      : index < currentSlide
+                      ? "opacity-0 transform -translate-x-full"
+                      : "opacity-0 transform translate-x-full"
+                  }`}
+                >
+                  <div
+                    className={`w-full h-full  rounded-xl sm:rounded-2xl relative overflow-hidden group active:scale-95 transition-transform touch-manipulation`}
+                  >
+                    {/* 배경 이미지 */}
+                    <div className="absolute inset-0">
+                      <Image
+                        src={getResultImagePath(type.code)}
+                        alt={type.name}
+                        fill
+                        className="object-cover opacity-30 group-active:opacity-50 transition-opacity duration-300"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                      />
+                      <div className="absolute"></div>
+                    </div>
+
+                    {/* 콘텐츠 - 모바일 최적화 */}
+                    <div className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 md:p-8 text-center">
+                      <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-3 sm:mb-4 transform group-active:scale-110 transition-transform duration-300">
+                        {type.emoji}
+                      </div>
+                      <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-white mb-2 sm:mb-3 md:mb-4">
+                        {type.name}
+                      </h3>
+                      <p className="text-white/90 text-sm sm:text-base md:text-lg lg:text-xl mb-4 sm:mb-5 md:mb-6 leading-relaxed max-w-xs sm:max-w-sm md:max-w-lg px-2">
+                        {type.description}
+                      </p>
+                      <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-2 sm:px-4 sm:py-2.5 md:px-6 md:py-3 border border-white/30 max-w-xs sm:max-w-sm md:max-w-md">
+                        <p className="text-white text-xs sm:text-sm font-medium leading-tight">
+                          💭 {type.character}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 네비게이션 화살표 - 모바일 터치 최적화 */}
+            <button
+              onClick={() =>
+                setCurrentSlide(
+                  (prev) =>
+                    (prev - 1 + previewTypes.length) % previewTypes.length
+                )
+              }
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-black/60 backdrop-blur-sm active:bg-black/80 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10 active:scale-95 touch-manipulation"
+            >
+              <HiChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            <button
+              onClick={() =>
+                setCurrentSlide((prev) => (prev + 1) % previewTypes.length)
+              }
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-black/60 backdrop-blur-sm active:bg-black/80 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10 active:scale-95 touch-manipulation"
+            >
+              <HiChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            {/* 인디케이터 도트 - 모바일 터치 최적화 */}
+            <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2">
+              {previewTypes.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-200 touch-manipulation ${
+                    index === currentSlide
+                      ? "bg-white scale-125"
+                      : "bg-white/40 active:bg-white/70"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* 실시간 통계 원형 그래프 */}
         <div
