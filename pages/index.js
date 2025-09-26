@@ -432,7 +432,8 @@ export default function Home() {
                       나는 어떤 돌하르방 여행 유형일까? 🤔
                     </p>
                     <p className="text-sm sm:text-lg text-white/90 leading-relaxed">
-                      밸런스 게임으로 나만의 제주 여행 성향을 발견하고{" "}
+                      밸런스 게임으로 나만의 제주 여행 성향을
+                      <br /> 발견하고{" "}
                       <span className="text-jeju-mint font-semibold">
                         AI 맞춤 코스 추천
                       </span>
@@ -737,15 +738,21 @@ export default function Home() {
       <footer className="bg-gray-900/50 backdrop-blur-sm border-t border-white/10 mt-16">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-center md:text-left">
-              <p className="text-white/80 text-sm">Copyright © 제주맹글이</p>
+            <div className="flex items-center space-x-4">
+              <Image
+                src="/logo.svg"
+                alt="제주맹글이"
+                width={162}
+                height={24}
+                className="h-6 w-auto"
+              />
             </div>
             <div className="text-center md:text-right">
               <p className="text-white/60 text-sm">
                 문의:{" "}
                 <a
                   href="mailto:darkwinterlab@gmail.com"
-                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                  className="text-jeju-mint hover:text-white transition-colors font-medium"
                 >
                   darkwinterlab@gmail.com
                 </a>

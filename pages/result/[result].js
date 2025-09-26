@@ -212,6 +212,13 @@ export default function ResultPage() {
     isMuted: true,
   });
 
+  // 이미지/영상 전환 상태
+  const [showImage, setShowImage] = useState(false);
+  const [carouselShowImage, setCarouselShowImage] = useState({});
+
+  // 공유 모달 상태
+  const [showShareModal, setShowShareModal] = useState(false);
+
   // 클릭 인디케이터 상태
   const [clickIndicator, setClickIndicator] = useState({
     show: false,
@@ -347,6 +354,92 @@ export default function ResultPage() {
     setCurrentSlide(index);
   };
 
+  // 공유 기능들
+  const handleCopyLink = async () => {
+    const shareUrl = `https://www.제주맹글이.site/result/${result}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert("링크가 복사되었습니다! 📋");
+    } catch (err) {
+      console.error("링크 복사 실패:", err);
+      alert("링크 복사에 실패했습니다.");
+    }
+  };
+
+  const handleInstagramShare = async () => {
+    const shareText = `나는 ${resultData.name}! ${resultData.description} - 제주맹글이에서 테스트해보세요!`;
+    const shareUrl = `https://www.제주맹글이.site/result/${result}`;
+
+    const shareData = {
+      title: `제주맹글이 | ${resultData.name}`,
+      text: shareText,
+      url: shareUrl,
+    };
+
+    // 네이티브 share API가 지원되는지 확인
+    if (navigator.share) {
+      // canShare로 공유 가능 여부 먼저 확인
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        try {
+          await navigator.share(shareData);
+          return;
+        } catch (err) {
+          // 사용자가 취소했거나 오류 발생 시 폴백 처리
+          if (err.name === "AbortError") {
+            console.log("사용자가 공유를 취소했습니다.");
+            return;
+          }
+          console.log("네이티브 공유 실패:", err);
+        }
+      } else {
+        // canShare가 없거나 지원하지 않는 데이터인 경우
+        try {
+          await navigator.share(shareData);
+          return;
+        } catch (err) {
+          if (err.name === "AbortError") {
+            console.log("사용자가 공유를 취소했습니다.");
+            return;
+          }
+          console.log("네이티브 공유 실패:", err);
+        }
+      }
+    }
+
+    // 폴백: 클립보드 복사 + 인스타그램 열기
+    try {
+      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      alert("내용이 복사되었습니다! 인스타그램에 붙여넣어 주세요! 📱");
+      window.open("https://www.instagram.com/", "_blank");
+    } catch (err) {
+      // 클립보드 접근도 실패한 경우
+      console.error("클립보드 복사 실패:", err);
+      window.open("https://www.instagram.com/", "_blank");
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    try {
+      const imageUrl = `/result/img/${result}.png`;
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `제주맹글이_${resultData.name}_결과.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      alert("이미지가 다운로드되었습니다! 💾");
+    } catch (err) {
+      console.error("이미지 다운로드 실패:", err);
+      alert("이미지 다운로드에 실패했습니다.");
+    }
+  };
+
   if (!result || !resultData) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
@@ -477,7 +570,9 @@ export default function ResultPage() {
             >
               {/* 숏폼 영상 */}
               <video
-                className="w-full h-full object-cover"
+                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                  showImage ? "opacity-0" : "opacity-100"
+                }`}
                 autoPlay
                 muted
                 loop
@@ -486,7 +581,7 @@ export default function ResultPage() {
                 onError={(e) => {
                   // 영상 로드 실패 시 이미지로 대체
                   e.target.style.display = "none";
-                  e.target.nextElementSibling.style.display = "block";
+                  setShowImage(true);
                 }}
               >
                 <source
@@ -496,12 +591,14 @@ export default function ResultPage() {
                 Your browser does not support the video tag.
               </video>
 
-              {/* 폴백 이미지 */}
+              {/* 결과 이미지 (토글 가능) */}
               <Image
                 src={`/result/img/${result}.png`}
                 alt={resultData.name}
                 fill
-                className="object-cover hidden"
+                className={`object-cover transition-opacity duration-300 ${
+                  showImage ? "opacity-100" : "opacity-0"
+                }`}
                 priority
               />
 
@@ -577,11 +674,21 @@ export default function ResultPage() {
                     </button>
                   </div>
 
-                  {/* 영상 정보 배지 */}
-                  <div className="bg-gradient-to-r from-black/70 to-black/60 backdrop-blur-sm rounded-full px-4 py-2 text-white text-xs font-medium shadow-lg border border-white/10">
+                  {/* 이미지 미리보기 버튼 */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowImage(!showImage);
+                    }}
+                    className="bg-gradient-to-r from-jeju-sunset/80 to-jeju-tangerine/80 backdrop-blur-sm rounded-full px-4 py-2 text-white text-xs font-medium shadow-lg border border-white/20 hover:from-jeju-tangerine/90 hover:to-jeju-sunset/90 transition-all duration-200 hover:scale-105 active:scale-95"
+                    title={showImage ? "영상으로 보기" : "이미지로 보기"}
+                  >
                     <span className="text-yellow-300 animate-pulse">✨</span>
-                    <span className="ml-1">{resultData.name} 미리보기</span>
-                  </div>
+                    <span className="ml-1">
+                      {showImage ? "영상 보기" : `${resultData.name} 미리보기`}
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -627,7 +734,7 @@ export default function ResultPage() {
               disabled={loading}
               className="bg-gradient-to-r from-jeju-ocean to-jeju-green hover:from-jeju-green hover:to-jeju-ocean text-white font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              🤖 AI가 추천하는 맞춤 여행 코스 받기
+              🤖 AI 추천 맞춤 여행 코스 받기
             </button>
           </div>
 
@@ -818,22 +925,7 @@ export default function ResultPage() {
           {/* 공유 버튼들 */}
           <div className="flex gap-4 justify-center">
             <button
-              onClick={() => {
-                const shareText = `나는 ${resultData.name}! ${resultData.description} - 제주맹글이에서 테스트해보세요!`;
-                const shareUrl = `https://www.제주맹글이.site/result/${result}`;
-
-                if (navigator.share) {
-                  navigator.share({
-                    title: `제주맹글이 | ${resultData.name}`,
-                    text: shareText,
-                    url: shareUrl,
-                  });
-                } else {
-                  // 폴백: 클립보드에 복사
-                  navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-                  alert("링크가 클립보드에 복사되었습니다!");
-                }
-              }}
+              onClick={() => setShowShareModal(true)}
               className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-full transition-colors"
             >
               📱 결과 공유하기
@@ -893,7 +985,11 @@ export default function ResultPage() {
                       <div className="absolute inset-0">
                         {/* 숏폼 영상 */}
                         <video
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+                            carouselShowImage[code]
+                              ? "opacity-0"
+                              : "opacity-100"
+                          }`}
                           autoPlay
                           muted
                           loop
@@ -902,7 +998,10 @@ export default function ResultPage() {
                           onError={(e) => {
                             // 영상 로드 실패 시 이미지로 대체
                             e.target.style.display = "none";
-                            e.target.nextElementSibling.style.display = "block";
+                            setCarouselShowImage((prev) => ({
+                              ...prev,
+                              [code]: true,
+                            }));
                           }}
                         >
                           <source
@@ -911,12 +1010,16 @@ export default function ResultPage() {
                           />
                         </video>
 
-                        {/* 폴백 이미지 */}
+                        {/* 이미지 (토글 가능) */}
                         <Image
                           src={`/result/img/${code}.png`}
                           alt={type.name}
                           fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105 hidden"
+                          className={`object-cover transition-all duration-300 group-hover:scale-105 ${
+                            carouselShowImage[code]
+                              ? "opacity-100"
+                              : "opacity-0"
+                          }`}
                           sizes="(max-width: 768px) 100vw, 50vw"
                         />
 
@@ -942,6 +1045,33 @@ export default function ResultPage() {
                               →
                             </span>
                           </div>
+                        </div>
+
+                        {/* 이미지 미리보기 버튼 */}
+                        <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setCarouselShowImage((prev) => ({
+                                ...prev,
+                                [code]: !prev[code],
+                              }));
+                            }}
+                            className="bg-gradient-to-r from-jeju-sunset/80 to-jeju-tangerine/80 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs font-medium shadow-lg border border-white/20 hover:from-jeju-tangerine/90 hover:to-jeju-sunset/90 transition-all duration-200 hover:scale-105 active:scale-95"
+                            title={
+                              carouselShowImage[code]
+                                ? "영상으로 보기"
+                                : "이미지로 보기"
+                            }
+                          >
+                            <span className="text-yellow-300 animate-pulse">
+                              ✨
+                            </span>
+                            <span className="ml-1">
+                              {carouselShowImage[code] ? "영상" : "미리보기"}
+                            </span>
+                          </button>
                         </div>
 
                         {/* 캐러셀 전용 페이지 이동 버튼 */}
@@ -1183,7 +1313,150 @@ export default function ResultPage() {
             </div>
           </div>
         )}
+
+        {/* 공유 모달 */}
+        {showShareModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-2xl p-6 max-w-md w-full">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-white">
+                  📱 결과 공유하기
+                </h3>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="text-gray-400 hover:text-white transition-colors text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* 결과 미리보기 */}
+              <div className="bg-gradient-to-r from-jeju-ocean/20 to-jeju-green/20 rounded-xl p-4 mb-6">
+                <div className="flex items-center gap-4 mb-4">
+                  {/* 결과 이미지 */}
+                  <div className="flex-shrink-0">
+                    <Image
+                      src={`/result/img/${result}.png`}
+                      alt={resultData.name}
+                      width={80}
+                      height={80}
+                      className="rounded-lg object-cover border-2 border-white/20"
+                    />
+                  </div>
+
+                  {/* 텍스트 정보 */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="text-2xl">{resultData.emoji}</div>
+                      <h4 className="text-white font-bold text-lg">
+                        {resultData.name}
+                      </h4>
+                    </div>
+                    <p className="text-white/80 text-sm leading-relaxed">
+                      {resultData.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 공유될 텍스트 미리보기 */}
+                <div className="bg-black/20 rounded-lg p-3 border border-white/10">
+                  <p className="text-white/70 text-xs mb-1">📝 공유될 내용:</p>
+                  <p className="text-white/90 text-sm">
+                    "나는 {resultData.name}! {resultData.description} -
+                    제주맹글이에서 테스트해보세요!"
+                  </p>
+                  <p className="text-jeju-mint text-xs mt-2">
+                    🔗 https://www.제주맹글이.site/result/{result}
+                  </p>
+                </div>
+              </div>
+
+              {/* 공유 옵션들 */}
+              <div className="space-y-3">
+                {/* 인스타그램 스토리 공유 */}
+                <button
+                  onClick={() => {
+                    handleInstagramShare();
+                    setShowShareModal(false);
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 font-medium"
+                >
+                  <span className="text-xl">📷</span>
+                  Instagram Story에 공유
+                </button>
+
+                {/* 링크 복사 */}
+                <button
+                  onClick={() => {
+                    handleCopyLink();
+                    setShowShareModal(false);
+                  }}
+                  className="w-full bg-jeju-mint hover:bg-jeju-mint/80 text-white py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 font-medium"
+                >
+                  <span className="text-xl">🔗</span>
+                  링크 복사
+                </button>
+
+                {/* 이미지 다운로드 */}
+                <button
+                  onClick={() => {
+                    handleDownloadImage();
+                    setShowShareModal(false);
+                  }}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 font-medium border border-white/20"
+                >
+                  <span className="text-xl">💾</span>
+                  이미지 다운로드
+                </button>
+              </div>
+
+              {/* 안내 텍스트 */}
+              <div className="mt-6 text-center text-white/60 text-sm">
+                <p>친구들과 함께 제주 여행 스타일을 비교해보세요! 🏝️</p>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* 푸터 */}
+      <footer className="border-t border-white/20 bg-black/30 backdrop-blur-sm py-8">
+        <div className="container mx-auto px-6 max-w-4xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* 로고 */}
+            <div className="flex items-center">
+              <Image
+                src="/logo.svg"
+                alt="제주맹글이"
+                width={162}
+                height={24}
+                className="h-6 w-auto"
+              />
+            </div>
+
+            {/* 문의 정보 */}
+            <div className="flex items-center gap-2 text-white/80">
+              <span className="text-sm">문의:</span>
+              <a
+                href="mailto:darkwinterlab@gmail.com"
+                className="text-jeju-mint hover:text-white transition-colors text-sm font-medium"
+              >
+                darkwinterlab@gmail.com
+              </a>
+            </div>
+          </div>
+
+          {/* 저작권 */}
+          <div className="mt-6 pt-6 border-t border-white/10 text-center">
+            <p className="text-white/60 text-xs">
+              ©2025 제주맹글이 <br />
+              AI가 생성한 결과는 오류가 있을 수 있습니다.
+              <br />
+              최종 판단은 사용자에게 있습니다.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

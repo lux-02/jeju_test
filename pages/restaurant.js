@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import Image from "next/image";
 import styles from "../styles/Restaurant.module.css";
 
 export default function Restaurant() {
@@ -283,6 +284,35 @@ export default function Restaurant() {
           </div>
         </div>
       </div>
+
+      {/* 푸터 */}
+      <footer className="bg-gray-900/50 backdrop-blur-sm border-t border-white/10 mt-16">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <div className="flex items-center space-x-4">
+              <Image
+                src="/logo.svg"
+                alt="제주맹글이"
+                width={162}
+                height={24}
+                className="h-6 w-auto"
+              />
+              <p className="text-white/80 text-sm">© 2025 제주맹글이</p>
+            </div>
+            <div className="text-center md:text-right">
+              <p className="text-white/60 text-sm">
+                문의:{" "}
+                <a
+                  href="mailto:darkwinterlab@gmail.com"
+                  className="text-jeju-mint hover:text-white transition-colors font-medium"
+                >
+                  darkwinterlab@gmail.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </>
   );
 }

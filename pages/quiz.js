@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
@@ -571,6 +572,35 @@ export default function Quiz() {
           </div>
         </div>
       </main>
+
+      {/* 푸터 */}
+      <footer className="border-t border-white/20 bg-black/30 backdrop-blur-sm py-8 mt-16">
+        <div className="container mx-auto px-6 max-w-4xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* 로고 */}
+            <div className="flex items-center space-x-4">
+              <Image
+                src="/logo.svg"
+                alt="제주맹글이"
+                width={162}
+                height={24}
+                className="h-6 w-auto"
+              />
+            </div>
+
+            {/* 문의 정보 */}
+            <div className="flex items-center gap-2 text-white/80">
+              <span className="text-sm">문의:</span>
+              <a
+                href="mailto:darkwinterlab@gmail.com"
+                className="text-jeju-mint hover:text-white transition-colors text-sm font-medium"
+              >
+                darkwinterlab@gmail.com
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* 다이나믹 배경 효과 */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
