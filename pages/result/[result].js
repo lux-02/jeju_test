@@ -1362,8 +1362,8 @@ export default function ResultPage() {
                 <div className="bg-black/20 rounded-lg p-3 border border-white/10">
                   <p className="text-white/70 text-xs mb-1">📝 공유될 내용:</p>
                   <p className="text-white/90 text-sm">
-                    "나는 {resultData.name}! {resultData.description} -
-                    제주맹글이에서 테스트해보세요!"
+                    &ldquo;나는 {resultData.name}! {resultData.description} -
+                    제주맹글이에서 테스트해보세요!&rdquo;
                   </p>
                   <p className="text-jeju-mint text-xs mt-2">
                     🔗 https://www.제주맹글이.site/result/{result}
