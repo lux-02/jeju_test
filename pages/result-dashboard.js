@@ -22,8 +22,6 @@ export default function ResultDashboard() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
-  const [deletingIds, setDeletingIds] = useState(new Set());
-
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -60,66 +58,6 @@ export default function ResultDashboard() {
 
     return () => clearInterval(interval);
   }, [isAutoRefresh, fetchData]);
-
-  // 개별 응답 삭제 함수
-  const deleteResponse = async (responseId) => {
-    if (!confirm("이 응답을 삭제하시겠습니까?")) return;
-
-    setDeletingIds((prev) => new Set([...prev, responseId]));
-
-    try {
-      const response = await fetch(
-        `/api/delete-response?response_id=${responseId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert("응답이 삭제되었습니다.");
-        fetchData(); // 데이터 새로고침
-      } else {
-        alert(`삭제 실패: ${result.error}`);
-      }
-    } catch (error) {
-      alert("삭제 중 오류가 발생했습니다.");
-      console.error("Delete error:", error);
-    } finally {
-      setDeletingIds((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(responseId);
-        return newSet;
-      });
-    }
-  };
-
-  // 세션 전체 삭제 함수
-  const deleteSession = async (sessionId) => {
-    if (!confirm("이 세션의 모든 응답을 삭제하시겠습니까?")) return;
-
-    try {
-      const response = await fetch(
-        `/api/delete-response?session_id=${sessionId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert("세션이 삭제되었습니다.");
-        fetchData(); // 데이터 새로고침
-      } else {
-        alert(`삭제 실패: ${result.error}`);
-      }
-    } catch (error) {
-      alert("삭제 중 오류가 발생했습니다.");
-      console.error("Delete error:", error);
-    }
-  };
 
   // 커스텀 툴팁 컴포넌트
   const CustomTooltip = ({ active, payload, label }) => {
@@ -461,7 +399,7 @@ export default function ResultDashboard() {
                           응답 시간
                         </th>
                         <th className="text-center py-3 px-4 text-gray-300">
-                          관리
+                          상태
                         </th>
                       </tr>
                     </thead>
@@ -507,24 +445,10 @@ export default function ResultDashboard() {
                             )}
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <div className="flex justify-center gap-2">
-                              <button
-                                onClick={() => deleteResponse(response.id)}
-                                disabled={deletingIds.has(response.id)}
-                                className="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500/50 text-red-300 rounded-lg text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {deletingIds.has(response.id)
-                                  ? "삭제중..."
-                                  : "🗑️ 삭제"}
-                              </button>
-                              <button
-                                onClick={() =>
-                                  deleteSession(response.session_id)
-                                }
-                                className="px-3 py-1 bg-orange-600/20 hover:bg-orange-600/40 border border-orange-500/30 hover:border-orange-500/50 text-orange-300 rounded-lg text-xs transition-colors"
-                              >
-                                🔥 세션삭제
-                              </button>
+                            <div className="flex justify-center">
+                              <span className="px-3 py-1 bg-green-600/20 border border-green-500/30 text-green-300 rounded-lg text-xs">
+                                📊 데이터 보존됨
+                              </span>
                             </div>
                           </td>
                         </tr>
@@ -538,7 +462,7 @@ export default function ResultDashboard() {
                   총 {data.detailedResponses.length}개의 응답이 표시됩니다.
                   <br />
                   <span className="text-xs text-gray-500">
-                    💡 개별 응답 삭제 또는 세션 전체 삭제가 가능합니다.
+                    🔒 모든 데이터는 통계 목적으로 안전하게 보관됩니다.
                   </span>
                 </div>
               </div>

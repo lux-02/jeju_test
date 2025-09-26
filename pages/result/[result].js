@@ -214,7 +214,6 @@ export default function ResultPage() {
 
   // 이미지/영상 전환 상태
   const [showImage, setShowImage] = useState(false);
-  const [carouselShowImage, setCarouselShowImage] = useState({});
 
   // 공유 모달 상태
   const [showShareModal, setShowShareModal] = useState(false);
@@ -336,6 +335,31 @@ export default function ResultPage() {
       return () => clearInterval(interval);
     }
   }, [isCarouselHovered, otherTypes.length]);
+
+  // result 파라미터가 변경될 때마다 컴포넌트 상태 초기화
+  useEffect(() => {
+    if (result) {
+      // 상태 초기화
+      setAiCourse(null);
+      setShowCourse(false);
+      setShowModal(false);
+      setShowShareModal(false);
+      setShowImage(false);
+      setCurrentSlide(0);
+
+      // 비디오 상태 초기화
+      setVideoStates({
+        isPlaying: true,
+        isMuted: true,
+      });
+
+      // 클릭 인디케이터 초기화
+      setClickIndicator({
+        show: false,
+        isPlay: false,
+      });
+    }
+  }, [result]);
 
   // 이전 슬라이드
   const goToPrevSlide = () => {
@@ -941,7 +965,7 @@ export default function ResultPage() {
         </div>
 
         {/* 다른 유형 보기 - 이미지 캐러셀 */}
-        <div className="card-glass">
+        <div className="">
           <div
             className="relative overflow-hidden rounded-2xl"
             onMouseEnter={() => setIsCarouselHovered(true)}
@@ -960,131 +984,68 @@ export default function ResultPage() {
                       : "opacity-0 transform translate-x-full"
                   }`}
                 >
-                  <div
-                    className="relative w-full h-full rounded-2xl overflow-hidden cursor-pointer group"
-                    onClick={(e) => {
-                      // 영상 영역 클릭 시 링크 이동 방지하고 재생/정지 토글
-                      e.preventDefault();
-                      e.stopPropagation();
-
-                      const video = e.currentTarget.querySelector("video");
-                      if (video.paused) {
-                        video.play();
-                      } else {
-                        video.pause();
-                      }
-                    }}
-                    onDoubleClick={(e) => {
-                      // 더블클릭 시에는 페이지 이동
-                      e.stopPropagation();
-                      window.location.href = `/result/${code}`;
-                    }}
-                  >
-                    <div className="relative w-full h-full">
-                      {/* 배경 영상/이미지 */}
-                      <div className="absolute inset-0">
-                        {/* 숏폼 영상 */}
-                        <video
-                          className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
-                            carouselShowImage[code]
-                              ? "opacity-0"
-                              : "opacity-100"
-                          }`}
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          poster={`/result/img/${code}.png`}
-                          onError={(e) => {
-                            // 영상 로드 실패 시 이미지로 대체
-                            e.target.style.display = "none";
-                            setCarouselShowImage((prev) => ({
-                              ...prev,
-                              [code]: true,
-                            }));
-                          }}
-                        >
-                          <source
-                            src={`https://storage.googleapis.com/jeju__test/vd/${code}.mp4`}
-                            type="video/mp4"
-                          />
-                        </video>
-
-                        {/* 이미지 (토글 가능) */}
-                        <Image
-                          src={`/result/img/${code}.png`}
-                          alt={type.name}
-                          fill
-                          className={`object-cover transition-all duration-300 group-hover:scale-105 ${
-                            carouselShowImage[code]
-                              ? "opacity-100"
-                              : "opacity-0"
-                          }`}
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                        />
-
-                        {/* 오버레이 */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                      </div>
-
-                      {/* 콘텐츠 */}
-                      <div className="absolute inset-0 flex flex-col justify-center p-6 md:p-8">
-                        <div className="text-center">
-                          <div className="text-4xl md:text-5xl mb-3">
-                            {type.emoji}
-                          </div>
-                          <h4 className="text-2xl md:text-3xl font-bold text-white mb-2 group-hover:text-jeju-mint transition-colors">
-                            {TYPE_MAPPING[code]}
-                          </h4>
-                          <p className="text-white/90 text-sm md:text-base mb-3 leading-relaxed">
-                            {type.description}
-                          </p>
-                          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-white/90 text-sm group-hover:bg-jeju-ocean/30 transition-colors">
-                            <span>자세히 보기</span>
-                            <span className="transform group-hover:translate-x-1 transition-transform">
-                              →
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* 이미지 미리보기 버튼 */}
-                        <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setCarouselShowImage((prev) => ({
-                                ...prev,
-                                [code]: !prev[code],
-                              }));
+                  <Link href={`/result/${code}`}>
+                    <div className="relative w-full h-full rounded-2xl overflow-hidden cursor-pointer group">
+                      <div className="relative w-full h-full">
+                        {/* 배경 영상/이미지 */}
+                        <div className="absolute inset-0">
+                          {/* 숏폼 영상 */}
+                          <video
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            poster={`/result/img/${code}.png`}
+                            onError={(e) => {
+                              // 영상 로드 실패 시 이미지로 대체
+                              e.target.style.display = "none";
+                              e.target.nextElementSibling.style.display =
+                                "block";
                             }}
-                            className="bg-gradient-to-r from-jeju-sunset/80 to-jeju-tangerine/80 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs font-medium shadow-lg border border-white/20 hover:from-jeju-tangerine/90 hover:to-jeju-sunset/90 transition-all duration-200 hover:scale-105 active:scale-95"
-                            title={
-                              carouselShowImage[code]
-                                ? "영상으로 보기"
-                                : "이미지로 보기"
-                            }
                           >
-                            <span className="text-yellow-300 animate-pulse">
-                              ✨
-                            </span>
-                            <span className="ml-1">
-                              {carouselShowImage[code] ? "영상" : "미리보기"}
-                            </span>
-                          </button>
+                            <source
+                              src={`https://storage.googleapis.com/jeju__test/vd/${code}.mp4`}
+                              type="video/mp4"
+                            />
+                          </video>
+
+                          {/* 폴백 이미지 */}
+                          <Image
+                            src={`/result/img/${code}.png`}
+                            alt={type.name}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105 hidden"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                          />
+
+                          {/* 오버레이 */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                         </div>
 
-                        {/* 캐러셀 전용 페이지 이동 버튼 */}
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <Link href={`/result/${code}`}>
-                            <button className="bg-black/60 backdrop-blur-sm rounded-full p-2 text-white hover:bg-jeju-ocean/80 transition-colors">
-                              <span className="text-xs">자세히 →</span>
-                            </button>
-                          </Link>
+                        {/* 콘텐츠 */}
+                        <div className="absolute inset-0 flex flex-col justify-center p-6 md:p-8">
+                          <div className="text-center">
+                            <div className="text-4xl md:text-5xl mb-3">
+                              {type.emoji}
+                            </div>
+                            <h4 className="text-2xl md:text-3xl font-bold text-white mb-2 group-hover:text-jeju-mint transition-colors">
+                              {TYPE_MAPPING[code]}
+                            </h4>
+                            <p className="text-white/90 text-sm md:text-base mb-3 leading-relaxed">
+                              {type.description}
+                            </p>
+                            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-white/90 text-sm group-hover:bg-jeju-ocean/30 transition-colors">
+                              <span>자세히 보기</span>
+                              <span className="transform group-hover:translate-x-1 transition-transform">
+                                →
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </div>
               ))}
             </div>
