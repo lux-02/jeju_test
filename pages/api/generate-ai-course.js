@@ -1,5 +1,12 @@
 import fs from "fs";
 import path from "path";
+import { GoogleGenAI } from "@google/genai";
+
+const geminiApiKey =
+  process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+const geminiClient = geminiApiKey
+  ? new GoogleGenAI({ apiKey: geminiApiKey })
+  : null;
 
 // CSV 데이터를 파싱하는 함수
 const parseCSV = (csvText) => {
@@ -110,10 +117,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "사용자 유형 정보가 필요합니다." });
     }
 
-    // Gemini AI API 호출
-    const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
-    if (!geminiApiKey) {
+    // Gemini AI API 호출 준비
+    if (!geminiApiKey || !geminiClient) {
       return res
         .status(500)
         .json({ error: "Gemini API 키가 설정되지 않았습니다." });
@@ -237,52 +242,38 @@ JSON 형식:
 
 JSON만 응답하세요.`;
 
-    // Gemini AI API 호출
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    let aiResponse;
+    try {
+      const aiResult = await geminiClient.models.generateContent({
+        model: "gemini-2.5-flash-lite",
+        contents: prompt,
+        generationConfig: {
+          temperature: 0.9,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 4096,
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.9,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 4096,
-          },
-        }),
-      }
-    );
+      });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Gemini API 오류:", errorData);
+      aiResponse =
+        aiResult?.text ||
+        aiResult?.output_text ||
+        (typeof aiResult?.response?.text === "function"
+          ? aiResult.response.text()
+          : aiResult?.response?.text) ||
+        aiResult?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+        aiResult?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!aiResponse) {
+        console.error("Gemini API 응답 형식 오류:", aiResult);
+        return res
+          .status(500)
+          .json({ error: "AI 응답을 처리할 수 없습니다." });
+      }
+    } catch (sdkError) {
+      console.error("Gemini API 오류:", sdkError);
       return res.status(500).json({ error: "AI 서비스에 연결할 수 없습니다." });
     }
-
-    const data = await response.json();
-
-    if (
-      !data.candidates ||
-      !data.candidates[0] ||
-      !data.candidates[0].content
-    ) {
-      console.error("Gemini API 응답 형식 오류:", data);
-      return res.status(500).json({ error: "AI 응답을 처리할 수 없습니다." });
-    }
-
-    const aiResponse = data.candidates[0].content.parts[0].text;
 
     // JSON 응답 파싱 시도 - 강화된 오류 처리
     let courseData;
