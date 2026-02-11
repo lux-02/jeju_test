@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
+import { HiArrowLeft, HiArrowRight, HiSparkles } from "react-icons/hi";
 
 // 실제 질문 데이터
 const QUESTIONS = [
@@ -377,11 +378,9 @@ export default function Quiz() {
   const currentQ = QUESTIONS[currentQuestion];
 
   return (
-    <div className="min-h-screen gradient-bg">
+    <div className="min-h-screen gradient-bg text-slate-50">
       <Head>
-        <title>
-          제주맹글이 | 제주 돌하르방 여행유형 테스트 - Q{currentQuestion + 1}/9
-        </title>
+        <title>{`제주맹글이 | 제주 돌하르방 여행유형 테스트 - Q${currentQuestion + 1}/9`}</title>
         <meta
           name="description"
           content={`제주여행 성향을 알아보는 트렌디한 밸런스 게임 - ${currentQ?.theme} | 제주도 여행 전 필수 테스트로 나만의 제주 여행 스타일 발견하기`}
@@ -422,84 +421,79 @@ export default function Quiz() {
         <link rel="canonical" href="https://www.제주맹글이.site/quiz" />
       </Head>
 
-      <main className="container mx-auto px-4 py-8 min-h-screen">
-        {/* 헤더 - 뒤로가기 버튼으로 변경 */}
+      <nav className="fixed left-4 right-4 top-4 z-50 rounded-2xl border border-white/20 bg-black/35 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+          <Link
+            href="/"
+            className="flex items-center gap-3 rounded-xl px-2 py-1.5 font-semibold text-white transition-colors hover:text-jeju-mint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jeju-sky"
+          >
+            <Image
+              src="/logo.svg"
+              alt="제주맹글이"
+              width={140}
+              height={24}
+              className="h-6 w-auto"
+            />
+          </Link>
+          <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white">
+            Q{currentQuestion + 1} / {QUESTIONS.length}
+          </div>
+        </div>
+      </nav>
+
+      <main className="mx-auto min-h-screen w-full max-w-5xl px-4 pb-16 pt-28 sm:px-6">
         <div
-          className={`flex items-center justify-between mb-8 ${
+          className={`mb-8 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-xl sm:p-5 ${
             isLoaded ? "animate-slide-up" : "opacity-0"
           }`}
         >
-          <button
-            onClick={handleGoBack}
-            className="group flex items-center text-white/80 hover:text-white transition-colors cursor-pointer"
-          >
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mr-3 group-hover:bg-white/30 transition-colors">
-              <span className="text-xl">←</span>
-            </div>
-            <span className="font-medium">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <button
+              onClick={handleGoBack}
+              className="group inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jeju-sky"
+            >
+              <HiArrowLeft className="h-4 w-4" />
               {currentQuestion === 0 ? "처음으로" : "이전 질문"}
-            </span>
-          </button>
+            </button>
 
-          <div className="glass-effect px-4 py-2 rounded-full">
-            <span className="text-white font-bold">
-              {currentQuestion + 1} / {QUESTIONS.length}
-            </span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white/95">
+              <HiSparkles className="h-4 w-4 text-jeju-sky" />
+              여행 성향 진단 진행 중
+            </div>
           </div>
-        </div>
 
-        {/* 진행바 */}
-        <div className={`mb-16 ${isLoaded ? "animate-slide-up" : "opacity-0"}`}>
-          <div className="relative">
-            <div className="w-full bg-white/20 backdrop-blur-sm rounded-full h-4 mb-4">
+          <div className="mt-5">
+            <div className="mb-2 flex items-center justify-between text-xs font-semibold text-white/70 sm:text-sm">
+              <span>{Math.round(progress)}% 완료</span>
+              <span>거의 다 왔어요</span>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full bg-white/15">
               <div
-                className="bg-gradient-to-r from-jeju-sunset to-jeju-ocean h-4 rounded-full transition-all duration-1000 ease-out shadow-glow relative overflow-hidden"
+                className="relative h-full rounded-full bg-gradient-to-r from-jeju-sunset to-jeju-primary transition-all duration-700 ease-out"
                 style={{ width: `${progress}%` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-gradient"></div>
               </div>
             </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-white/80 text-sm font-medium">
-                {Math.round(progress)}% 완료
-              </span>
-              <span className="text-white/80 text-sm font-medium">
-                거의 다 왔어요! 🗿✨
-              </span>
-            </div>
           </div>
         </div>
 
-        {/* 질문 섹션 */}
         <div
-          className={`max-w-4xl mx-auto text-center mb-16 ${
+          className={`mx-auto mb-8 max-w-4xl rounded-3xl border border-white/20 bg-black/35 p-6 text-center backdrop-blur-xl sm:p-8 ${
             isAnimating ? "animate-scale-in" : ""
           } ${isLoaded ? "animate-slide-up" : "opacity-0"}`}
         >
-          {/* 질문 테마 */}
-          <div className="mb-8">
-            <div className="relative">
-              <div
-                className={`absolute -inset-4 bg-gradient-to-r ${currentQ?.bgGradient} rounded-6xl blur-3xl opacity-20`}
-              ></div>
-              <div className="relative">
-                <div className="glass-effect inline-block px-6 py-3 rounded-full mb-6">
-                  <span className="text-white font-bold text-lg">
-                    {currentQuestion + 1}번째 질문
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/90 sm:text-sm">
+            <span className={`h-2.5 w-2.5 rounded-full bg-gradient-to-r ${currentQ?.bgGradient}`} />
+            {currentQ?.theme}
           </div>
 
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-8 leading-relaxed">
+          <h2 className="text-2xl font-black leading-relaxed text-white sm:text-4xl">
             {currentQ?.question}
           </h2>
         </div>
 
-        {/* 선택지 */}
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5">
           {currentQ?.options.map((option, index) => (
             <div
               key={option.id}
@@ -515,127 +509,84 @@ export default function Quiz() {
                 onClick={() => handleAnswer(option.id)}
                 disabled={isAnimating}
                 className={`
-                  group relative w-full text-left overflow-hidden
-                  bg-white/10 backdrop-blur-md border border-white/30 
-                  rounded-6xl p-8 transition-all duration-500
-                  hover:bg-white/20 hover:border-white/50 hover:scale-105 hover:shadow-glow
+                  group relative w-full overflow-hidden rounded-2xl border border-white/25 bg-black/35 p-5 text-left backdrop-blur-xl
+                  transition-all duration-300 hover:-translate-y-0.5 hover:border-white/45 hover:bg-black/45 hover:shadow-glow
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jeju-sky
                   ${
                     isAnimating
                       ? "opacity-50 cursor-not-allowed"
-                      : "hover:-translate-y-2"
+                      : "cursor-pointer"
                   }
                 `}
               >
-                {/* 배경 그라디언트 효과 */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-r ${option.color} opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-6xl`}
+                  className={`absolute inset-0 bg-gradient-to-r ${option.color} opacity-0 transition-opacity duration-300 group-hover:opacity-20`}
                 ></div>
 
-                <div className="relative z-10 flex items-center space-x-6">
-                  {/* 이모지 */}
-                  <div className="text-5xl group-hover:scale-125 transition-transform duration-500 animate-float">
+                <div className="relative z-10 flex items-center gap-4 sm:gap-5">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-3xl transition-transform duration-300 group-hover:scale-105">
                     {option.emoji}
                   </div>
 
-                  {/* 텍스트 콘텐츠 */}
                   <div className="flex-1">
-                    <p className="font-bold text-xl md:text-2xl text-white leading-relaxed group-hover:text-jeju-sand transition-colors duration-300">
+                    <p className="text-lg font-bold leading-relaxed text-white sm:text-xl">
                       {option.text}
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-white/70">
+                      {option.desc}
                     </p>
                   </div>
 
-                  {/* 화살표 */}
-                  <div className="text-white/60 group-hover:text-white group-hover:translate-x-2 transition-all duration-300">
-                    <span className="text-3xl">→</span>
-                  </div>
-                </div>
-
-                {/* 호버 시 나타나는 파동 효과 */}
-                <div className="absolute inset-0 rounded-6xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <div className="absolute inset-0 rounded-6xl animate-pulse bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                  <HiArrowRight className="h-5 w-5 text-white/70 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-white" />
                 </div>
               </button>
             </div>
           ))}
         </div>
 
-        {/* 하단 안내 */}
         <div
           className={`text-center mt-10 ${
             isLoaded ? "animate-slide-up" : "opacity-0"
           }`}
         >
-          <div className="inline-block px-8 py-4 rounded-full">
-            <p className="text-white/90 font-small">
-              직감적으로 선택해주세요! 정답은 없어요 😊
+          <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-5 py-3">
+            <p className="text-sm font-medium text-white/85">
+              직감적으로 선택해도 괜찮아요. 정답은 없습니다.
             </p>
           </div>
         </div>
       </main>
 
-      {/* 푸터 */}
-      <footer className="border-t border-white/20 bg-black/30 backdrop-blur-sm py-8 mt-16">
-        <div className="container mx-auto px-6 max-w-4xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* 로고 */}
-            <div className="flex items-center space-x-4">
-              <Image
-                src="/logo.svg"
-                alt="제주맹글이"
-                width={162}
-                height={24}
-                className="h-6 w-auto"
-              />
-            </div>
-
-            {/* 문의 정보 */}
-            <div className="flex items-center gap-2 text-white/80">
-              <span className="text-sm">문의:</span>
-              <a
-                href="mailto:darkwinterlab@gmail.com"
-                className="text-jeju-mint hover:text-white transition-colors text-sm font-medium"
-              >
-                darkwinterlab@gmail.com
-              </a>
-            </div>
+      <footer className="border-t border-white/10 bg-black/30">
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6">
+          <Image
+            src="/logo.svg"
+            alt="제주맹글이"
+            width={162}
+            height={24}
+            className="h-6 w-auto"
+          />
+          <div className="flex items-center gap-2 text-sm text-white/70">
+            <span>문의:</span>
+            <a
+              href="mailto:darkwinterlab@gmail.com"
+              className="font-medium text-jeju-mint transition-colors hover:text-white"
+            >
+              darkwinterlab@gmail.com
+            </a>
           </div>
         </div>
       </footer>
 
-      {/* 다이나믹 배경 효과 */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div
-          className={`absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-r ${currentQ?.bgGradient} rounded-full blur-3xl opacity-20 animate-pulse-soft`}
+          className={`absolute -top-40 -right-40 h-96 w-96 rounded-full bg-gradient-to-r ${currentQ?.bgGradient} opacity-20 blur-3xl animate-pulse-soft`}
         ></div>
         <div
-          className={`absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-r ${currentQ?.bgGradient} rounded-full blur-3xl opacity-20 animate-pulse-soft`}
+          className={`absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-gradient-to-r ${currentQ?.bgGradient} opacity-20 blur-3xl animate-pulse-soft`}
           style={{ animationDelay: "1s" }}
         ></div>
       </div>
-
-      <style jsx>{`
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-      `}</style>
     </div>
   );
 }

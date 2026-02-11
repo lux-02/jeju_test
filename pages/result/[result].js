@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import { TYPE_MAPPING } from "../../lib/typeMapping";
 // React Icons 추가
@@ -12,6 +12,8 @@ import {
   HiPause,
   HiChevronLeft,
   HiChevronRight,
+  HiSparkles,
+  HiArrowRight,
 } from "react-icons/hi";
 
 // 8가지 돌하르방 유형 상세 정보
@@ -186,6 +188,61 @@ const RESULT_TYPES = {
   },
 };
 
+const TIME_SLOT_NAMES = {
+  morning: "🌅 오전",
+  afternoon: "☀️ 오후",
+  evening: "🌙 저녁",
+};
+
+const DURATION_DAY_KEYS = {
+  당일: ["day1"],
+  "1박 2일": ["day1", "day2"],
+  "2박 3일": ["day1", "day2", "day3"],
+};
+
+const AFFILIATE_OFFERS = {
+  "A-C-E": {
+    title: "제주 취다선 명상 & 요가 원데이 클래스 체험",
+    url: "https://3ha.in/r/361696",
+    thumbnail: "/result/affiliate/A-C-E.webp",
+  },
+  "A-C-F": {
+    title: "제주 코티지 가든 컬러 헌팅 체험",
+    url: "https://3ha.in/r/361695",
+    thumbnail: "/result/affiliate/A-C-F.webp",
+  },
+  "A-D-E": {
+    title: "제주도 스쿠버 다이빙 체험",
+    url: "https://3ha.in/r/361698",
+    thumbnail: "/result/affiliate/A-D-E.webp",
+  },
+  "A-D-F": {
+    title: "제주 올패스 이용권",
+    url: "https://3ha.in/r/361691",
+    thumbnail: "/result/affiliate/A-D-F.webp",
+  },
+  "B-C-E": {
+    title: "[제주] 선녀와나무꾼 테마파크",
+    url: "https://3ha.in/r/361690",
+    thumbnail: "/result/affiliate/B-C-E.webp",
+  },
+  "B-C-F": {
+    title: "제주의 아름다운 섬, 4.3 역사 & 문화 투어",
+    url: "https://3ha.in/r/361702",
+    thumbnail: "/result/affiliate/B-C-F.webp",
+  },
+  "B-D-E": {
+    title: "제주 전통 한복 야외 스냅 촬영",
+    url: "https://3ha.in/r/361693",
+    thumbnail: "/result/affiliate/B-D-E.webp",
+  },
+  "B-D-F": {
+    title: "제주 최고의 일일 투어: 유네스코 및 필수 하이라이트 (동부/남서부)",
+    url: "https://3ha.in/r/361700",
+    thumbnail: "/result/affiliate/B-D-F.webp",
+  },
+};
+
 export default function ResultPage() {
   const router = useRouter();
   const { result } = router.query;
@@ -217,6 +274,7 @@ export default function ResultPage() {
 
   // 공유 모달 상태
   const [showShareModal, setShowShareModal] = useState(false);
+  const [failedPreviewVideos, setFailedPreviewVideos] = useState({});
 
   // 클릭 인디케이터 상태
   const [clickIndicator, setClickIndicator] = useState({
@@ -226,6 +284,7 @@ export default function ResultPage() {
 
   const resultData = result ? RESULT_TYPES[result] : null;
   const resultName = result ? TYPE_MAPPING[result] : "";
+  const affiliateOffer = result ? AFFILIATE_OFFERS[result] : null;
 
   // 결과 유형에 따른 기본 선호도 매핑
   const getDefaultPreferences = (resultCode) => {
@@ -321,9 +380,34 @@ export default function ResultPage() {
   };
 
   // 다른 유형들 (현재 유형 제외)
-  const otherTypes = Object.entries(RESULT_TYPES).filter(
-    ([code]) => code !== result
+  const otherTypes = useMemo(
+    () => Object.entries(RESULT_TYPES).filter(([code]) => code !== result),
+    [result]
   );
+  const aiCourseDays = useMemo(() => {
+    if (!aiCourse) return [];
+
+    const dayKeys = DURATION_DAY_KEYS[aiCourse.duration] || [
+      "day1",
+      "day2",
+      "day3",
+    ];
+
+    return dayKeys
+      .map((dayKey, index) => ({
+        dayKey,
+        label: `${index + 1}일차`,
+        plan: aiCourse[dayKey],
+      }))
+      .filter(
+        ({ plan }) =>
+          plan &&
+          typeof plan === "object" &&
+          ["morning", "afternoon", "evening"].some((slot) =>
+            Array.isArray(plan[slot])
+          )
+      );
+  }, [aiCourse]);
 
   // 캐러셀 자동 슬라이드 (호버 시 정지)
   useEffect(() => {
@@ -345,6 +429,7 @@ export default function ResultPage() {
       setShowModal(false);
       setShowShareModal(false);
       setShowImage(false);
+      setFailedPreviewVideos({});
       setCurrentSlide(0);
 
       // 비디오 상태 초기화
@@ -466,13 +551,13 @@ export default function ResultPage() {
 
   if (!result || !resultData) {
     return (
-      <div className="min-h-screen gradient-bg flex items-center justify-center">
-        <div className="text-center text-white">
-          <h1 className="text-2xl font-bold mb-4">잘못된 접근입니다</h1>
-          <p className="mb-6">올바른 결과 페이지가 아닙니다.</p>
+      <div className="gradient-bg flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-lg rounded-3xl border border-white/20 bg-black/40 p-8 text-center text-white backdrop-blur-xl">
+          <h1 className="mb-4 text-2xl font-black">잘못된 접근입니다</h1>
+          <p className="mb-6 text-white/80">올바른 결과 페이지가 아닙니다.</p>
           <Link
             href="/"
-            className="bg-jeju-ocean hover:bg-jeju-green text-white px-6 py-3 rounded-full transition-colors"
+            className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 font-semibold text-white transition-all hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jeju-sky"
           >
             홈으로 돌아가기
           </Link>
@@ -482,9 +567,9 @@ export default function ResultPage() {
   }
 
   return (
-    <div className="min-h-screen gradient-bg">
+    <div className="min-h-screen gradient-bg text-slate-50">
       <Head>
-        <title>제주맹글이 | {resultData.name} - 나만의 제주 여행 스타일</title>
+        <title>{`제주맹글이 | ${resultData.name} - 나만의 제주 여행 스타일`}</title>
         <meta
           name="description"
           content={`${resultData.description} - 제주도 맞춤 여행 코스와 추천 장소를 확인해보세요!`}
@@ -529,47 +614,35 @@ export default function ResultPage() {
         />
       </Head>
 
-      <main className="container mx-auto px-6 py-8 max-w-4xl">
-        {/* 헤더 네비게이션 */}
-        <div className="flex items-center justify-between mb-8">
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+        <div className="mb-8">
           <Link
             href="/"
-            className="text-white/80 hover:text-white transition-colors"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jeju-sky"
           >
-            ← 홈으로
+            <span>←</span>
+            홈으로
           </Link>
-          <div className="flex gap-4">
-            <Link
-              href="/quiz"
-              className="text-white/80 hover:text-white transition-colors"
-            >
-              다시 테스트
-            </Link>
-            <Link
-              href="/result-dashboard"
-              className="text-white/80 hover:text-white transition-colors"
-            >
-              결과 통계
-            </Link>
-          </div>
         </div>
 
         {/* 결과 카드 */}
-        <div className="card-glass mb-8">
+        <div className="mb-8 rounded-3xl border border-white/20 bg-black/35 p-5 backdrop-blur-xl sm:p-7">
           <div className="text-center mb-8">
-            <div className="text-6xl mt-4 mb-4">{resultData.emoji}</div>
-            <h1 className="text-4xl font-black text-white mb-4">
+            <div className="mx-auto mb-4 mt-2 inline-flex h-20 w-20 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-5xl">
+              {resultData.emoji}
+            </div>
+            <h1 className="mb-3 text-3xl font-black text-white sm:text-4xl">
               {resultData.name}
             </h1>
-            <p className="text-xl text-white/90 mb-6">
+            <p className="mx-auto mb-6 max-w-2xl text-base text-white/85 sm:text-lg">
               {resultData.description}
             </p>
           </div>
 
           {/* 결과 영상/이미지 */}
-          <div className="relative w-full max-w-lg mx-auto mb-8">
+          <div className="relative mx-auto mb-8 w-full max-w-xl">
             <div
-              className="relative rounded-2xl overflow-hidden shadow-2xl bg-black cursor-pointer group"
+              className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/20 bg-black shadow-2xl shadow-black/40"
               onClick={(e) => {
                 // 컨트롤 버튼 클릭 시에는 영상 토글 방지
                 if (e.target.closest("button")) return;
@@ -604,12 +677,12 @@ export default function ResultPage() {
                 poster={`/result/img/${result}.png`}
                 onError={(e) => {
                   // 영상 로드 실패 시 이미지로 대체
-                  e.target.style.display = "none";
+                  e.currentTarget.style.display = "none";
                   setShowImage(true);
                 }}
               >
                 <source
-                  src={`https://storage.googleapis.com/jeju__test/vd/${result}.mp4`}
+                  src={`/result/vd/${result}.mp4`}
                   type="video/mp4"
                 />
                 Your browser does not support the video tag.
@@ -628,8 +701,8 @@ export default function ResultPage() {
 
               {/* 유튜브 스타일 클릭 인디케이터 */}
               {clickIndicator.show && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                  <div className="bg-black/60 backdrop-blur-sm rounded-full p-4 animate-ping">
+                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+                  <div className="rounded-full border border-white/20 bg-black/65 p-4 backdrop-blur-sm animate-ping">
                     {clickIndicator.isPlay ? (
                       <HiPlay className="w-8 h-8 text-white" />
                     ) : (
@@ -640,7 +713,7 @@ export default function ResultPage() {
               )}
 
               {/* 영상 컨트롤 오버레이 */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 hover:opacity-100 transition-all duration-300 group">
+              <div className="group absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent opacity-0 transition-all duration-300 hover:opacity-100">
                 <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {/* 음소거 토글 버튼 */}
@@ -656,7 +729,7 @@ export default function ResultPage() {
                           isMuted: video.muted,
                         }));
                       }}
-                      className="w-10 h-10 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-jeju-ocean/80 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg border border-white/20"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-jeju-ocean/80"
                       title={videoStates.isMuted ? "소리 켜기" : "소리 끄기"}
                     >
                       {videoStates.isMuted ? (
@@ -687,7 +760,7 @@ export default function ResultPage() {
                           }));
                         }
                       }}
-                      className="w-10 h-10 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-jeju-green/80 hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg border border-white/20"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-jeju-green/80"
                       title={videoStates.isPlaying ? "일시정지" : "재생"}
                     >
                       {videoStates.isPlaying ? (
@@ -705,7 +778,7 @@ export default function ResultPage() {
                       e.stopPropagation();
                       setShowImage(!showImage);
                     }}
-                    className="bg-gradient-to-r from-jeju-sunset/80 to-jeju-tangerine/80 backdrop-blur-sm rounded-full px-4 py-2 text-white text-xs font-medium shadow-lg border border-white/20 hover:from-jeju-tangerine/90 hover:to-jeju-sunset/90 transition-all duration-200 hover:scale-105 active:scale-95"
+                    className="rounded-full border border-white/20 bg-gradient-to-r from-jeju-sunset/80 to-jeju-tangerine/80 px-4 py-2 text-xs font-medium text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:from-jeju-tangerine/90 hover:to-jeju-sunset/90"
                     title={showImage ? "영상으로 보기" : "이미지로 보기"}
                   >
                     <span className="text-yellow-300 animate-pulse">✨</span>
@@ -718,13 +791,13 @@ export default function ResultPage() {
             </div>
           </div>
 
-          <div className="text-center bg-white/10 rounded-2xl p-6 mb-6">
+          <div className="mb-6 rounded-2xl border border-white/20 bg-white/10 p-6 text-center">
             <p className="text-lg text-white/95">💭 {resultData.character}</p>
           </div>
 
           {/* 특성 리스트 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white/10 rounded-2xl p-6">
+          <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-6">
               <h3 className="text-xl font-bold text-white mb-4">
                 🎯 당신의 여행 특성
               </h3>
@@ -737,7 +810,7 @@ export default function ResultPage() {
               </ul>
             </div>
 
-            <div className="bg-white/10 rounded-2xl p-6">
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-6">
               <h3 className="text-xl font-bold text-white mb-4">
                 🗺️ 추천 여행 코스
               </h3>
@@ -752,127 +825,99 @@ export default function ResultPage() {
           </div>
 
           {/* AI 코스 생성 버튼 */}
-          <div className="text-center mb-8">
+          <div className="mb-8 text-center">
             <button
               onClick={openModal}
               disabled={loading}
-              className="bg-gradient-to-r from-jeju-ocean to-jeju-green hover:from-jeju-green hover:to-jeju-ocean text-white font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-jeju-ocean to-jeju-primary px-6 py-3 text-base font-bold text-white shadow-lg shadow-jeju-ocean/35 transition-all duration-200 hover:-translate-y-0.5 hover:from-jeju-primary hover:to-jeju-ocean disabled:cursor-not-allowed disabled:opacity-50"
             >
-              🤖 AI 추천 맞춤 여행 코스 받기
+              <HiSparkles className="h-5 w-5" />
+              AI 추천 맞춤 여행 코스 받기
             </button>
           </div>
 
           {/* AI 생성 코스 표시 */}
           {showCourse && aiCourse && (
-            <div className="rounded-2xl p-6 mb-8">
-              <h3 className="text-2xl font-bold text-white mb-4 text-center">
+            <div className="mb-8 rounded-2xl border border-white/20 bg-black/30 p-6 backdrop-blur-sm">
+              <h3 className="mb-4 text-center text-2xl font-bold text-white">
                 🎯 {resultData.name}을 위한 맞춤 코스
               </h3>
-              <div className="bg-black/20 rounded-xl p-4 mb-4">
-                <h4 className="text-xl font-bold text-white mb-2">
-                  {aiCourse.title}
-                </h4>
+              <div className="mb-4 rounded-xl border border-white/15 bg-white/5 p-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <h4 className="text-xl font-bold text-white">
+                    {aiCourse.title}
+                  </h4>
+                  {aiCourse.duration && (
+                    <span className="inline-flex rounded-full border border-jeju-sky/45 bg-jeju-ocean/30 px-3 py-1 text-xs font-semibold text-white">
+                      {aiCourse.duration}
+                    </span>
+                  )}
+                </div>
                 <p className="text-white/80">{aiCourse.summary}</p>
               </div>
 
-              {/* 1일차 */}
-              <div className="mb-6">
-                <h4 className="text-lg font-bold text-white mb-3">📅 1일차</h4>
-                <div className="space-y-4">
-                  {["morning", "afternoon", "evening"].map((timeSlot) => {
-                    const activities = aiCourse.day1?.[timeSlot] || [];
-                    const timeSlotNames = {
-                      morning: "🌅 오전",
-                      afternoon: "☀️ 오후",
-                      evening: "🌙 저녁",
-                    };
-
-                    if (activities.length === 0) return null;
-
-                    return (
-                      <div
-                        key={timeSlot}
-                        className="bg-black/20 rounded-lg p-4"
-                      >
-                        <h5 className="font-semibold text-white mb-2">
-                          {timeSlotNames[timeSlot]}
-                        </h5>
-                        {activities.map((activity, idx) => (
-                          <div key={idx} className="text-white/90 mb-2">
-                            <strong>{activity.time}</strong> -{" "}
-                            {activity.activity}
-                            <br />
-                            <span className="text-sm text-white/70">
-                              📍 {activity.location} ({activity.duration})
-                            </span>
-                            {activity.tip && (
-                              <div className="text-sm text-jeju-mint mt-1">
-                                💡 {activity.tip}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 2일차 */}
-              {aiCourse.day2 && (
-                <div className="mb-6">
-                  <h4 className="text-lg font-bold text-white mb-3">
-                    📅 2일차
+              {aiCourseDays.map((day) => (
+                <div key={day.dayKey} className="mb-6 last:mb-0">
+                  <h4 className="mb-3 text-lg font-bold text-white">
+                    📅 {day.label}
                   </h4>
                   <div className="space-y-4">
-                    {["morning", "afternoon"].map((timeSlot) => {
-                      const activities = aiCourse.day2?.[timeSlot] || [];
-                      const timeSlotNames = {
-                        morning: "🌅 오전",
-                        afternoon: "☀️ 오후",
-                      };
+                    {["morning", "afternoon", "evening"].some(
+                      (slot) => (day.plan?.[slot] || []).length > 0
+                    ) ? (
+                      ["morning", "afternoon", "evening"].map((timeSlot) => {
+                        const activities = day.plan?.[timeSlot] || [];
 
-                      if (activities.length === 0) return null;
+                        if (activities.length === 0) return null;
 
-                      return (
-                        <div
-                          key={timeSlot}
-                          className="bg-black/20 rounded-lg p-4"
-                        >
-                          <h5 className="font-semibold text-white mb-2">
-                            {timeSlotNames[timeSlot]}
-                          </h5>
-                          {activities.map((activity, idx) => (
-                            <div key={idx} className="text-white/90 mb-2">
-                              <strong>{activity.time}</strong> -{" "}
-                              {activity.activity}
-                              <br />
-                              <span className="text-sm text-white/70">
-                                📍 {activity.location} ({activity.duration})
-                              </span>
-                              {activity.tip && (
-                                <div className="text-sm text-jeju-mint mt-1">
-                                  💡 {activity.tip}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })}
+                        return (
+                          <div
+                            key={`${day.dayKey}-${timeSlot}`}
+                            className="rounded-lg border border-white/15 bg-white/5 p-4"
+                          >
+                            <h5 className="mb-2 font-semibold text-white">
+                              {TIME_SLOT_NAMES[timeSlot]}
+                            </h5>
+                            {activities.map((activity, idx) => (
+                              <div key={idx} className="mb-2 text-white/90">
+                                <strong>{activity.time}</strong> -{" "}
+                                {activity.activity}
+                                <br />
+                                <span className="text-sm text-white/70">
+                                  📍 {activity.location} ({activity.duration})
+                                </span>
+                                {activity.tip && (
+                                  <div className="mt-1 text-sm text-jeju-mint">
+                                    💡 {activity.tip}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-white/20 bg-white/5 p-4 text-sm text-white/70">
+                        해당 일차의 추천 일정이 아직 비어 있어요. 다시 생성하면
+                        더 구체적인 일정이 나올 수 있습니다.
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+              ))}
 
               {/* 추천 맛집 */}
               {aiCourse.restaurants && aiCourse.restaurants.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="text-lg font-bold text-white mb-3">
+                  <h4 className="mb-3 text-lg font-bold text-white">
                     🍽️ 추천 맛집
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {aiCourse.restaurants.map((restaurant, idx) => (
-                      <div key={idx} className="bg-black/20 rounded-lg p-4">
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-white/15 bg-white/5 p-4"
+                      >
                         <div className="text-white font-semibold">
                           {restaurant.name}
                         </div>
@@ -894,10 +939,10 @@ export default function ResultPage() {
               {/* 숙소 추천 */}
               {aiCourse.accommodation && (
                 <div className="mb-6">
-                  <h4 className="text-lg font-bold text-white mb-3">
+                  <h4 className="mb-3 text-lg font-bold text-white">
                     🏨 추천 숙소
                   </h4>
-                  <div className="bg-black/20 rounded-lg p-4">
+                  <div className="rounded-lg border border-white/15 bg-white/5 p-4">
                     <div className="text-white font-semibold">
                       {aiCourse.accommodation.name}
                     </div>
@@ -917,7 +962,7 @@ export default function ResultPage() {
               {/* 여행 팁 */}
               {aiCourse.specialTips && aiCourse.specialTips.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="text-lg font-bold text-white mb-3">
+                  <h4 className="mb-3 text-lg font-bold text-white">
                     💡 특별 팁
                   </h4>
                   <ul className="space-y-2">
@@ -932,7 +977,7 @@ export default function ResultPage() {
 
               {/* 예산 정보 */}
               {aiCourse.totalBudget && (
-                <div className="text-center bg-jeju-ocean/20 rounded-lg p-4">
+                <div className="rounded-lg border border-jeju-sky/30 bg-jeju-ocean/20 p-4 text-center">
                   <div className="text-white font-semibold">
                     💰 예상 총 예산: {aiCourse.totalBudget}
                   </div>
@@ -946,18 +991,62 @@ export default function ResultPage() {
             </div>
           )}
 
+          {affiliateOffer && (
+            <section className="mb-8 rounded-2xl border border-white/20 bg-black/30 p-6 backdrop-blur-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="relative h-40 w-full overflow-hidden rounded-xl border border-white/15 sm:h-28 sm:w-44 sm:flex-shrink-0">
+                  <Image
+                    src={affiliateOffer.thumbnail || `/result/img/${result}.png`}
+                    alt={affiliateOffer.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, 176px"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/55">
+                    유형 맞춤 추천 체험
+                  </p>
+                  <h3 className="mt-1 text-lg font-bold text-white sm:text-xl">
+                    {affiliateOffer.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-white/70">
+                    {resultName} 성향으로 여행할 때 동선에 자연스럽게 넣기 좋은
+                    체험이에요.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <a
+                      href={affiliateOffer.url}
+                      target="_blank"
+                      rel="nofollow sponsored noopener noreferrer"
+                      className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-jeju-sunset to-jeju-tangerine px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:from-jeju-tangerine hover:to-jeju-sunset"
+                    >
+                      일정에 추가하기
+                      <HiArrowRight className="h-4 w-4" />
+                    </a>
+                    
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-white/50">
+                파트너 링크를 통해 예약 시 운영에 도움이 되는 수수료를 받을 수 있습니다.
+              </p>
+            </section>
+          )}
+
           {/* 공유 버튼들 */}
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-wrap justify-center gap-3">
             <button
               onClick={() => setShowShareModal(true)}
-              className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-full transition-colors"
+              className="inline-flex min-h-11 items-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 font-semibold text-white transition-all hover:bg-white/20"
             >
-              📱 결과 공유하기
+              <span className="mr-2">📱</span>
+              결과 공유하기
             </button>
 
             <Link
               href="/quiz"
-              className="bg-gradient-to-r from-jeju-sunset to-jeju-tangerine hover:from-jeju-tangerine hover:to-jeju-sunset text-white px-6 py-3 rounded-full transition-all duration-300"
+              className="inline-flex min-h-11 items-center rounded-xl bg-gradient-to-r from-jeju-sunset to-jeju-tangerine px-5 py-3 font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:from-jeju-tangerine hover:to-jeju-sunset"
             >
               🔄 다시 테스트하기
             </Link>
@@ -965,9 +1054,9 @@ export default function ResultPage() {
         </div>
 
         {/* 다른 유형 보기 - 이미지 캐러셀 */}
-        <div className="">
+        <div>
           <div
-            className="relative overflow-hidden rounded-2xl"
+            className="relative overflow-hidden rounded-2xl border border-white/20 bg-black/30 p-2 backdrop-blur-xl sm:p-3"
             onMouseEnter={() => setIsCarouselHovered(true)}
             onMouseLeave={() => setIsCarouselHovered(false)}
           >
@@ -985,27 +1074,30 @@ export default function ResultPage() {
                   }`}
                 >
                   <Link href={`/result/${code}`}>
-                    <div className="relative w-full h-full rounded-2xl overflow-hidden cursor-pointer group">
+                    <div className="group relative h-full w-full cursor-pointer overflow-hidden rounded-2xl border border-white/15">
                       <div className="relative w-full h-full">
                         {/* 배경 영상/이미지 */}
                         <div className="absolute inset-0">
                           {/* 숏폼 영상 */}
                           <video
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+                              failedPreviewVideos[code] ? "hidden" : ""
+                            }`}
                             autoPlay
                             muted
                             loop
                             playsInline
                             poster={`/result/img/${code}.png`}
-                            onError={(e) => {
+                            onError={() => {
                               // 영상 로드 실패 시 이미지로 대체
-                              e.target.style.display = "none";
-                              e.target.nextElementSibling.style.display =
-                                "block";
+                              setFailedPreviewVideos((prev) => ({
+                                ...prev,
+                                [code]: true,
+                              }));
                             }}
                           >
                             <source
-                              src={`https://storage.googleapis.com/jeju__test/vd/${code}.mp4`}
+                              src={`/result/vd/${code}.mp4`}
                               type="video/mp4"
                             />
                           </video>
@@ -1015,12 +1107,14 @@ export default function ResultPage() {
                             src={`/result/img/${code}.png`}
                             alt={type.name}
                             fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105 hidden"
+                            className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
+                              failedPreviewVideos[code] ? "block" : "hidden"
+                            }`}
                             sizes="(max-width: 768px) 100vw, 50vw"
                           />
 
                           {/* 오버레이 */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
                         </div>
 
                         {/* 콘텐츠 */}
@@ -1029,17 +1123,15 @@ export default function ResultPage() {
                             <div className="text-4xl md:text-5xl mb-3">
                               {type.emoji}
                             </div>
-                            <h4 className="text-2xl md:text-3xl font-bold text-white mb-2 group-hover:text-jeju-mint transition-colors">
+                            <h4 className="mb-2 text-2xl font-bold text-white transition-colors group-hover:text-jeju-mint md:text-3xl">
                               {TYPE_MAPPING[code]}
                             </h4>
                             <p className="text-white/90 text-sm md:text-base mb-3 leading-relaxed">
                               {type.description}
                             </p>
-                            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-white/90 text-sm group-hover:bg-jeju-ocean/30 transition-colors">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-white/90 backdrop-blur-sm transition-colors group-hover:bg-jeju-ocean/30">
                               <span>자세히 보기</span>
-                              <span className="transform group-hover:translate-x-1 transition-transform">
-                                →
-                              </span>
+                              <HiArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </div>
                           </div>
                         </div>
@@ -1053,7 +1145,7 @@ export default function ResultPage() {
             {/* 네비게이션 화살표 */}
             <button
               onClick={goToPrevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/60 backdrop-blur-sm hover:bg-jeju-ocean/80 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10 border border-white/20 hover:scale-110 active:scale-95 shadow-lg"
+              className="absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-jeju-ocean/80"
               aria-label="이전 슬라이드"
             >
               <HiChevronLeft className="w-6 h-6" />
@@ -1061,7 +1153,7 @@ export default function ResultPage() {
 
             <button
               onClick={goToNextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/60 backdrop-blur-sm hover:bg-jeju-ocean/80 text-white rounded-full flex items-center justify-center transition-all duration-200 z-10 border border-white/20 hover:scale-110 active:scale-95 shadow-lg"
+              className="absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-jeju-ocean/80"
               aria-label="다음 슬라이드"
             >
               <HiChevronRight className="w-6 h-6" />
@@ -1071,21 +1163,21 @@ export default function ResultPage() {
 
         {/* 사용자 정보 입력 모달 */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/20 bg-slate-950/95 p-6 backdrop-blur-xl">
+              <div className="mb-6 flex items-center justify-between">
                 <h3 className="text-2xl font-bold text-white">
                   🤖 맞춤 여행 코스 생성
                 </h3>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="rounded-lg border border-white/20 bg-white/5 px-2 py-1 text-gray-300 transition-colors hover:text-white"
                 >
                   ✕
                 </button>
               </div>
 
-              <p className="text-white/80 mb-6">
+              <p className="mb-6 text-white/80">
                 {resultData.name}에게 딱 맞는 제주 여행 코스를 생성해드려요! 몇
                 가지 정보를 알려주시면 더욱 정확한 추천을 받을 수 있습니다.
               </p>
@@ -1103,10 +1195,10 @@ export default function ResultPage() {
                         onClick={() =>
                           setUserPreferences((prev) => ({ ...prev, region }))
                         }
-                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                        className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
                           userPreferences.region === region
-                            ? "bg-jeju-ocean text-white"
-                            : "bg-white/10 text-white/80 hover:bg-white/20"
+                            ? "border-jeju-sky bg-jeju-ocean/40 text-white"
+                            : "border-white/15 bg-white/10 text-white/80 hover:bg-white/20"
                         }`}
                       >
                         {region}
@@ -1127,10 +1219,10 @@ export default function ResultPage() {
                         onClick={() =>
                           setUserPreferences((prev) => ({ ...prev, weather }))
                         }
-                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                        className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
                           userPreferences.weather === weather
-                            ? "bg-jeju-ocean text-white"
-                            : "bg-white/10 text-white/80 hover:bg-white/20"
+                            ? "border-jeju-sky bg-jeju-ocean/40 text-white"
+                            : "border-white/15 bg-white/10 text-white/80 hover:bg-white/20"
                         }`}
                       >
                         {weather}
@@ -1151,10 +1243,10 @@ export default function ResultPage() {
                         onClick={() =>
                           setUserPreferences((prev) => ({ ...prev, companion }))
                         }
-                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                        className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
                           userPreferences.companion === companion
-                            ? "bg-jeju-ocean text-white"
-                            : "bg-white/10 text-white/80 hover:bg-white/20"
+                            ? "border-jeju-sky bg-jeju-ocean/40 text-white"
+                            : "border-white/15 bg-white/10 text-white/80 hover:bg-white/20"
                         }`}
                       >
                         {companion}
@@ -1176,10 +1268,10 @@ export default function ResultPage() {
                           onClick={() =>
                             setUserPreferences((prev) => ({ ...prev, mood }))
                           }
-                          className={`p-2 rounded-lg text-sm font-medium transition-colors ${
+                          className={`rounded-lg border p-2 text-sm font-medium transition-all ${
                             userPreferences.mood === mood
-                              ? "bg-jeju-ocean text-white"
-                              : "bg-white/10 text-white/80 hover:bg-white/20"
+                              ? "border-jeju-sky bg-jeju-ocean/40 text-white"
+                              : "border-white/15 bg-white/10 text-white/80 hover:bg-white/20"
                           }`}
                         >
                           {mood}
@@ -1201,10 +1293,10 @@ export default function ResultPage() {
                         onClick={() =>
                           setUserPreferences((prev) => ({ ...prev, budget }))
                         }
-                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                        className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
                           userPreferences.budget === budget
-                            ? "bg-jeju-ocean text-white"
-                            : "bg-white/10 text-white/80 hover:bg-white/20"
+                            ? "border-jeju-sky bg-jeju-ocean/40 text-white"
+                            : "border-white/15 bg-white/10 text-white/80 hover:bg-white/20"
                         }`}
                       >
                         {budget}
@@ -1225,10 +1317,10 @@ export default function ResultPage() {
                         onClick={() =>
                           setUserPreferences((prev) => ({ ...prev, duration }))
                         }
-                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                        className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
                           userPreferences.duration === duration
-                            ? "bg-jeju-ocean text-white"
-                            : "bg-white/10 text-white/80 hover:bg-white/20"
+                            ? "border-jeju-sky bg-jeju-ocean/40 text-white"
+                            : "border-white/15 bg-white/10 text-white/80 hover:bg-white/20"
                         }`}
                       >
                         {duration}
@@ -1239,17 +1331,17 @@ export default function ResultPage() {
               </div>
 
               {/* 생성 버튼 */}
-              <div className="flex gap-3 mt-8">
+              <div className="mt-8 flex gap-3">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 px-6 rounded-lg transition-colors"
+                  className="flex-1 rounded-lg border border-white/20 bg-white/10 px-6 py-3 text-white transition-colors hover:bg-white/20"
                 >
                   취소
                 </button>
                 <button
                   onClick={() => generateAICourse(userPreferences)}
                   disabled={loading}
-                  className="flex-2 bg-gradient-to-r from-jeju-ocean to-jeju-green hover:from-jeju-green hover:to-jeju-ocean text-white py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-[2] rounded-lg bg-gradient-to-r from-jeju-ocean to-jeju-primary px-6 py-3 text-white transition-all duration-200 hover:from-jeju-primary hover:to-jeju-ocean disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">
@@ -1263,8 +1355,8 @@ export default function ResultPage() {
               </div>
 
               {/* 현재 선택된 옵션 미리보기 */}
-              <div className="mt-6 p-4 bg-black/20 rounded-lg">
-                <p className="text-white/60 text-sm mb-2">현재 선택:</p>
+              <div className="mt-6 rounded-lg border border-white/15 bg-white/5 p-4">
+                <p className="mb-2 text-sm text-white/60">현재 선택:</p>
                 <p className="text-white text-sm">
                   {userPreferences.region} • {userPreferences.weather} •{" "}
                   {userPreferences.companion} • {userPreferences.mood} •{" "}
@@ -1277,23 +1369,23 @@ export default function ResultPage() {
 
         {/* 공유 모달 */}
         {showShareModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-2xl p-6 max-w-md w-full">
-              <div className="flex items-center justify-between mb-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl border border-white/20 bg-slate-950/95 p-6 backdrop-blur-xl">
+              <div className="mb-6 flex items-center justify-between">
                 <h3 className="text-2xl font-bold text-white">
                   📱 결과 공유하기
                 </h3>
                 <button
                   onClick={() => setShowShareModal(false)}
-                  className="text-gray-400 hover:text-white transition-colors text-2xl"
+                  className="rounded-lg border border-white/20 bg-white/5 px-2 py-1 text-2xl text-gray-300 transition-colors hover:text-white"
                 >
                   ✕
                 </button>
               </div>
 
               {/* 결과 미리보기 */}
-              <div className="bg-gradient-to-r from-jeju-ocean/20 to-jeju-green/20 rounded-xl p-4 mb-6">
-                <div className="flex items-center gap-4 mb-4">
+              <div className="mb-6 rounded-xl border border-white/15 bg-white/5 p-4">
+                <div className="mb-4 flex items-center gap-4">
                   {/* 결과 이미지 */}
                   <div className="flex-shrink-0">
                     <Image
@@ -1320,8 +1412,8 @@ export default function ResultPage() {
                 </div>
 
                 {/* 공유될 텍스트 미리보기 */}
-                <div className="bg-black/20 rounded-lg p-3 border border-white/10">
-                  <p className="text-white/70 text-xs mb-1">📝 공유될 내용:</p>
+                <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+                  <p className="mb-1 text-xs text-white/70">📝 공유될 내용:</p>
                   <p className="text-white/90 text-sm">
                     &ldquo;나는 {resultData.name}! {resultData.description} -
                     제주맹글이에서 테스트해보세요!&rdquo;
@@ -1340,7 +1432,7 @@ export default function ResultPage() {
                     handleInstagramShare();
                     setShowShareModal(false);
                   }}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 font-medium"
+                  className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/20 bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 font-medium text-white transition-all duration-200 hover:from-purple-700 hover:to-pink-700"
                 >
                   <span className="text-xl">📷</span>
                   Instagram Story에 공유
@@ -1352,7 +1444,7 @@ export default function ResultPage() {
                     handleCopyLink();
                     setShowShareModal(false);
                   }}
-                  className="w-full bg-jeju-mint hover:bg-jeju-mint/80 text-white py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 font-medium"
+                  className="flex w-full items-center justify-center gap-3 rounded-xl bg-jeju-mint px-6 py-4 font-medium text-white transition-all duration-200 hover:bg-jeju-mint/80"
                 >
                   <span className="text-xl">🔗</span>
                   링크 복사
@@ -1364,7 +1456,7 @@ export default function ResultPage() {
                     handleDownloadImage();
                     setShowShareModal(false);
                   }}
-                  className="w-full bg-white/10 hover:bg-white/20 text-white py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 font-medium border border-white/20"
+                  className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/20 bg-white/10 px-6 py-4 font-medium text-white transition-all duration-200 hover:bg-white/20"
                 >
                   <span className="text-xl">💾</span>
                   이미지 다운로드
@@ -1372,7 +1464,7 @@ export default function ResultPage() {
               </div>
 
               {/* 안내 텍스트 */}
-              <div className="mt-6 text-center text-white/60 text-sm">
+              <div className="mt-6 text-center text-sm text-white/60">
                 <p>친구들과 함께 제주 여행 스타일을 비교해보세요! 🏝️</p>
               </div>
             </div>
@@ -1381,9 +1473,9 @@ export default function ResultPage() {
       </main>
 
       {/* 푸터 */}
-      <footer className="border-t border-white/20 bg-black/30 backdrop-blur-sm py-8">
-        <div className="container mx-auto px-6 max-w-4xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      <footer className="border-t border-white/10 bg-black/30 py-8">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             {/* 로고 */}
             <div className="flex items-center">
               <Image

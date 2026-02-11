@@ -8,28 +8,31 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // 제주 감성 컬러 팔레트
         jeju: {
-          sky: "#87CEEB", // 제주 하늘
-          ocean: "#4A90E2", // 제주 바다
-          sunset: "#FF8A65", // 제주 노을
-          tangerine: "#FF7043", // 제주 감귤
-          green: "#66BB6A", // 제주 자연
-          stone: "#78909C", // 돌하르방
-          sand: "#F5F5DC", // 제주 백사장
-          coral: "#FF8A80", // 산호빛
-          mint: "#4DB6AC", // 민트바다
-          lavender: "#9575CD", // 라벤더
+          primary: "#0EA5E9",
+          sky: "#38BDF8",
+          ocean: "#0284C7",
+          sunset: "#F97316",
+          tangerine: "#FB923C",
+          green: "#0EA5A0",
+          stone: "#334155",
+          sand: "#F8FAFC",
+          coral: "#FB7185",
+          mint: "#2DD4BF",
+          lavender: "#6366F1",
+          purple: "#6366F1",
+          cta: "#F97316",
         },
-        // 그라디언트용 색상
         gradient: {
-          start: "#667eea",
-          end: "#764ba2",
-          jeju: "#FF8A65",
-          ocean: "#4A90E2",
+          start: "#0EA5E9",
+          end: "#0284C7",
+          jeju: "#F97316",
+          ocean: "#38BDF8",
         },
       },
       fontFamily: {
+        heading: ["Space Grotesk", "Pretendard", "sans-serif"],
+        body: ["DM Sans", "Pretendard", "sans-serif"],
         pretendard: ["Pretendard", "system-ui", "sans-serif"],
       },
       borderRadius: {
@@ -38,12 +41,11 @@ module.exports = {
         "6xl": "3rem",
       },
       boxShadow: {
-        jeju: "0 10px 25px -3px rgba(74, 144, 226, 0.1), 0 4px 6px -2px rgba(74, 144, 226, 0.05)",
-        sunset:
-          "0 10px 25px -3px rgba(255, 138, 101, 0.1), 0 4px 6px -2px rgba(255, 138, 101, 0.05)",
-        soft: "0 4px 20px -2px rgba(0, 0, 0, 0.08)",
-        glow: "0 0 20px rgba(255, 138, 101, 0.3)",
-        "inner-soft": "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
+        jeju: "0 18px 40px -24px rgba(2, 132, 199, 0.55)",
+        sunset: "0 16px 36px -20px rgba(249, 115, 22, 0.4)",
+        soft: "0 12px 30px -18px rgba(15, 23, 42, 0.35)",
+        glow: "0 0 0 1px rgba(56, 189, 248, 0.15), 0 20px 40px -24px rgba(56, 189, 248, 0.55)",
+        "inner-soft": "inset 0 2px 6px 0 rgba(15, 23, 42, 0.12)",
       },
       backdropBlur: {
         xs: "2px",
@@ -67,11 +69,11 @@ module.exports = {
           "50%": { transform: "translateY(-10px)" },
         },
         slideUp: {
-          "0%": { opacity: "0", transform: "translateY(30px)" },
+          "0%": { opacity: "0", transform: "translateY(20px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         scaleIn: {
-          "0%": { opacity: "0", transform: "scale(0.9)" },
+          "0%": { opacity: "0", transform: "scale(0.95)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
         gradient: {
@@ -80,12 +82,12 @@ module.exports = {
         },
       },
       backgroundImage: {
-        "jeju-gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        "ocean-gradient": "linear-gradient(135deg, #4A90E2 0%, #87CEEB 100%)",
-        "sunset-gradient": "linear-gradient(135deg, #FF8A65 0%, #FF7043 100%)",
-        "nature-gradient": "linear-gradient(135deg, #66BB6A 0%, #4DB6AC 100%)",
+        "jeju-gradient": "linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)",
+        "ocean-gradient": "linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)",
+        "sunset-gradient": "linear-gradient(135deg, #F97316 0%, #FB923C 100%)",
+        "nature-gradient": "linear-gradient(135deg, #0EA5A0 0%, #2DD4BF 100%)",
         glass:
-          "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
+          "linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.08) 100%)",
       },
     },
   },

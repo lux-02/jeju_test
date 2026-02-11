@@ -6,7 +6,6 @@ export default function Document() {
       <Head>
         {/* 기본 메타데이터 */}
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#FF6B35" />
 
         {/* 파비콘 */}

@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -15,6 +15,76 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import {
+  HiArrowLeft,
+  HiChartBar,
+  HiSparkles,
+  HiUsers,
+  HiTrendingUp,
+  HiPlay,
+  HiPause,
+} from "react-icons/hi";
+
+const BAR_COLORS = [
+  "#38BDF8",
+  "#F97316",
+  "#2DD4BF",
+  "#6366F1",
+  "#FB7185",
+  "#FB923C",
+];
+
+function QuestionBarTooltip({ active, payload, label }) {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-white/20 bg-black/85 p-3 shadow-lg backdrop-blur-sm">
+      <p className="text-sm font-semibold text-white">{label}</p>
+      {payload.map((entry) => {
+        const total = entry.payload?.total || 1;
+        const percentage = ((entry.value / total) * 100).toFixed(1);
+
+        return (
+          <p key={entry.dataKey} className="text-xs" style={{ color: entry.color }}>
+            {`${entry.dataKey}: ${entry.value}명 (${percentage}%)`}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function ResultPieTooltip({ active, payload }) {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+
+  const item = payload[0];
+  const totalResponses = item.payload.totalResponses || 1;
+  const percentage = ((item.value / totalResponses) * 100).toFixed(1);
+
+  return (
+    <div className="rounded-xl border border-white/20 bg-black/85 p-3 shadow-lg backdrop-blur-sm">
+      <p className="text-sm font-semibold text-white">{item.name}</p>
+      <p className="text-xs text-white/75">{`${item.value}명 (${percentage}%)`}</p>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, title, value, description, valueClassName = "text-jeju-sky" }) {
+  return (
+    <div className="rounded-2xl border border-white/20 bg-black/35 p-5 backdrop-blur-xl">
+      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10">
+        <Icon className="h-5 w-5 text-white" />
+      </div>
+      <p className="text-sm text-white/65">{title}</p>
+      <p className={`mt-1 text-3xl font-black ${valueClassName}`}>{value}</p>
+      <p className="mt-1 text-xs text-white/55">{description}</p>
+    </div>
+  );
+}
 
 export default function ResultDashboard() {
   const [data, setData] = useState(null);
@@ -22,35 +92,36 @@ export default function ResultDashboard() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/dashboard-data");
       const result = await response.json();
 
-      if (result.success) {
+      if (response.ok && result.success) {
         setData(result.data);
         setLastUpdated(new Date(result.data.lastUpdated));
         setError(null);
       } else {
-        setError(result.error);
+        setError(result.error || "대시보드 데이터를 불러오지 못했습니다.");
       }
     } catch (err) {
       setError("데이터 조회 중 오류가 발생했습니다.");
-      console.error("Error:", err);
+      console.error("Dashboard fetch error:", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // 초기 데이터 로드
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // 자동 새로고침 (10초마다)
   useEffect(() => {
-    if (!isAutoRefresh) return;
+    if (!isAutoRefresh) {
+      return undefined;
+    }
 
     const interval = setInterval(() => {
       fetchData();
@@ -59,212 +130,197 @@ export default function ResultDashboard() {
     return () => clearInterval(interval);
   }, [isAutoRefresh, fetchData]);
 
-  // 커스텀 툴팁 컴포넌트
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-medium">{`${label}`}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {`${entry.dataKey}: ${entry.value}명 (${(
-                (entry.value / entry.payload.total) *
-                100
-              ).toFixed(1)}%)`}
-            </p>
-          ))}
-        </div>
-      );
+  const barKeys = useMemo(() => {
+    if (!data?.barChartData?.length) {
+      return [];
     }
-    return null;
-  };
 
-  const CustomPieTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      const total = data.payload.value;
-      const percentage = ((total / data.payload.totalResponses) * 100).toFixed(
-        1
-      );
+    const keySet = new Set();
+    data.barChartData.forEach((item) => {
+      Object.keys(item).forEach((key) => {
+        if (key !== "name" && key !== "total") {
+          keySet.add(key);
+        }
+      });
+    });
 
-      return (
-        <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-medium">{data.name} 유형</p>
-          <p className="text-sm text-gray-300">{`${total}명 (${percentage}%)`}</p>
-        </div>
-      );
+    return Array.from(keySet);
+  }, [data?.barChartData]);
+
+  const sortedResultStats = useMemo(() => {
+    if (!data?.finalResultStats) {
+      return [];
     }
-    return null;
-  };
+
+    return Object.entries(data.finalResultStats)
+      .sort(([, a], [, b]) => b - a)
+      .map(([type, count], index) => ({
+        rank: index + 1,
+        type,
+        count,
+        percentage: ((count / (data.totalResponses || 1)) * 100).toFixed(1),
+      }));
+  }, [data?.finalResultStats, data?.totalResponses]);
+
+  const isInitialLoading = loading && !data;
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen gradient-bg text-slate-50">
       <Head>
-        <title>제주 퀴즈 결과 대시보드 - 실시간 모니터링</title>
+        <title>제주 퀴즈 결과 대시보드</title>
         <meta
           name="description"
-          content="제주 여행유형 테스트 결과를 실시간으로 모니터링하는 대시보드"
+          content="제주 여행유형 테스트 결과를 실시간으로 모니터링하는 운영 대시보드"
         />
       </Head>
 
-      <main className="container mx-auto px-6 py-8 max-w-7xl">
-        {/* 헤더 */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <div className="group flex items-center text-gray-400 hover:text-white transition-colors cursor-pointer">
-                <div className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center mr-3 transition-colors">
-                  <span className="text-xl">←</span>
-                </div>
-                <span className="font-medium">홈으로</span>
-              </div>
+      <nav className="fixed left-4 right-4 top-4 z-50 rounded-2xl border border-white/20 bg-black/35 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+          <Link
+            href="/"
+            className="flex items-center gap-3 rounded-xl px-2 py-1.5 font-semibold text-white transition-colors hover:text-jeju-mint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jeju-sky"
+          >
+            <Image src="/logo.svg" alt="제주맹글이" width={140} height={24} className="h-6 w-auto" />
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition-all hover:bg-white/20"
+            >
+              <HiArrowLeft className="h-4 w-4" />
+              홈
             </Link>
-
-            <div className="h-8 w-px bg-gray-700"></div>
-
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              📊 실시간 결과 대시보드
-              <div className="flex items-center gap-2 text-sm font-normal">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-400">LIVE</span>
-              </div>
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* 자동 새로고침 토글 */}
-            <button
-              onClick={() => setIsAutoRefresh(!isAutoRefresh)}
-              className={`px-4 py-2 rounded-lg border transition-colors ${
-                isAutoRefresh
-                  ? "bg-green-600 border-green-500 text-white"
-                  : "bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700"
-              }`}
+            <Link
+              href="/quiz"
+              className="inline-flex min-h-10 items-center rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition-all hover:bg-white/20"
             >
-              {isAutoRefresh ? "🔄 자동새고침 ON" : "⏸️ 자동새고침 OFF"}
-            </button>
-
-            {/* 수동 새로고침 버튼 */}
-            <button
-              onClick={fetchData}
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 border border-blue-500 rounded-lg transition-colors"
-            >
-              {loading ? "⏳ 로딩중..." : "🔄 새로고침"}
-            </button>
+              테스트
+            </Link>
           </div>
         </div>
+      </nav>
 
-        {/* 마지막 업데이트 시간 */}
-        {lastUpdated && (
-          <div className="mb-6 text-center">
-            <span className="text-gray-400 text-sm">
-              마지막 업데이트: {lastUpdated.toLocaleString("ko-KR")}
-            </span>
-          </div>
-        )}
-
-        {loading && !data ? (
-          <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-            <p className="mt-4 text-gray-400">데이터 로딩 중...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-6 text-center">
-            <h3 className="text-red-400 font-bold text-lg mb-2">
-              ❌ 오류 발생
-            </h3>
-            <p className="text-red-300">{error}</p>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* 전체 통계 카드 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 text-center">
-                <div className="text-4xl font-bold text-blue-400 mb-2">
-                  {data?.totalResponses || 0}
-                </div>
-                <div className="text-gray-300">총 참여자 수</div>
+      <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-28 sm:px-6">
+        <section className="mb-8 rounded-3xl border border-white/20 bg-black/35 p-5 backdrop-blur-xl sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/90 sm:text-sm">
+                <HiChartBar className="h-4 w-4 text-jeju-sky" />
+                Operations Dashboard
               </div>
-              <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 text-center">
-                <div className="text-4xl font-bold text-green-400 mb-2">
-                  {Object.keys(data?.finalResultStats || {}).length}
-                </div>
-                <div className="text-gray-300">발견된 유형 수</div>
-              </div>
-              <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 text-center">
-                <div className="text-4xl font-bold text-purple-400 mb-2">
-                  {isAutoRefresh ? "10초" : "수동"}
-                </div>
-                <div className="text-gray-300">업데이트 간격</div>
-              </div>
+              <h1 className="mt-4 text-2xl font-black text-white sm:text-3xl">
+                실시간 결과 대시보드
+              </h1>
+              <p className="mt-2 text-sm text-white/70 sm:text-base">
+                질문별 응답 흐름과 유형 분포를 실시간으로 모니터링합니다.
+              </p>
             </div>
 
-            {/* 차트 영역 */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {/* 막대그래프 - Q1~Q9 질문별 응답 비율 */}
-              <div className="bg-gray-900 border border-gray-700 rounded-xl p-6">
-                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  📊 Q1~Q9 질문별 응답 비율
-                  <span className="text-sm font-normal text-gray-400">
-                    (막대그래프)
-                  </span>
-                </h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setIsAutoRefresh((prev) => !prev)}
+                aria-pressed={isAutoRefresh}
+                className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all ${
+                  isAutoRefresh
+                    ? "border-jeju-mint/60 bg-jeju-mint/25 text-white"
+                    : "border-white/20 bg-white/10 text-white/75 hover:bg-white/20"
+                }`}
+              >
+                {isAutoRefresh ? <HiPause className="h-4 w-4" /> : <HiPlay className="h-4 w-4" />}
+                {isAutoRefresh ? "자동새로고침 ON" : "자동새로고침 OFF"}
+              </button>
 
-                {data?.barChartData && (
-                  <ResponsiveContainer width="100%" height={500}>
-                    <BarChart
-                      data={data.barChartData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <button
+                onClick={fetchData}
+                disabled={loading}
+                className="inline-flex min-h-11 items-center rounded-xl bg-gradient-to-r from-jeju-ocean to-jeju-primary px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:from-jeju-primary hover:to-jeju-ocean disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "로딩 중..." : "새로고침"}
+              </button>
+            </div>
+          </div>
+
+          {lastUpdated && (
+            <p className="mt-4 text-xs text-white/55 sm:text-sm">
+              마지막 업데이트: {lastUpdated.toLocaleString("ko-KR")} • {isAutoRefresh ? "10초 자동 갱신" : "수동 갱신"}
+            </p>
+          )}
+        </section>
+
+        {isInitialLoading ? (
+          <section className="rounded-3xl border border-white/20 bg-black/35 p-16 text-center backdrop-blur-xl">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-white/25 border-t-white" />
+            <p className="mt-4 text-white/70">데이터 로딩 중...</p>
+          </section>
+        ) : error ? (
+          <section className="rounded-3xl border border-red-400/40 bg-red-500/10 p-8 text-center">
+            <h3 className="text-lg font-bold text-red-200">데이터 로드 오류</h3>
+            <p className="mt-2 text-sm text-red-100/90">{error}</p>
+          </section>
+        ) : (
+          <div className="space-y-8">
+            <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <StatCard
+                icon={HiUsers}
+                title="총 참여자"
+                value={`${data?.totalResponses || 0}명`}
+                description="누적 응답 수"
+                valueClassName="text-jeju-sky"
+              />
+              <StatCard
+                icon={HiSparkles}
+                title="발견된 유형"
+                value={`${Object.keys(data?.finalResultStats || {}).length}개`}
+                description="현재까지 관측된 결과 타입"
+                valueClassName="text-jeju-mint"
+              />
+              <StatCard
+                icon={HiTrendingUp}
+                title="업데이트 모드"
+                value={isAutoRefresh ? "10초" : "수동"}
+                description={isAutoRefresh ? "자동 갱신 활성화" : "수동 갱신 모드"}
+                valueClassName="text-jeju-cta"
+              />
+            </section>
+
+            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <div className="rounded-3xl border border-white/20 bg-black/35 p-5 backdrop-blur-xl sm:p-6">
+                <h3 className="mb-5 text-lg font-bold text-white sm:text-xl">
+                  질문별 응답 비율 (Q1~Q9)
+                </h3>
+                {data?.barChartData?.length ? (
+                  <ResponsiveContainer width="100%" height={440}>
+                    <BarChart data={data.barChartData} margin={{ top: 16, right: 20, left: 4, bottom: 56 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.12)" />
                       <XAxis
                         dataKey="name"
-                        stroke="#9CA3AF"
+                        stroke="#CBD5E1"
                         fontSize={11}
-                        angle={-45}
+                        angle={-40}
                         textAnchor="end"
-                        height={80}
+                        height={74}
                       />
-                      <YAxis stroke="#9CA3AF" fontSize={12} />
-                      <Tooltip content={<CustomTooltip />} />
-                      {/* 모든 질문에서 사용되는 모든 키를 수집해서 Bar 생성 */}
-                      {data.barChartData.length > 0 &&
-                        (() => {
-                          const allKeys = new Set();
-                          data.barChartData.forEach((item) => {
-                            Object.keys(item).forEach((key) => {
-                              if (key !== "name" && key !== "total") {
-                                allKeys.add(key);
-                              }
-                            });
-                          });
-
-                          return Array.from(allKeys).map((key, index) => (
-                            <Bar
-                              key={key}
-                              dataKey={key}
-                              fill={index % 2 === 0 ? "#60A5FA" : "#F87171"}
-                              name={key}
-                            />
-                          ));
-                        })()}
+                      <YAxis stroke="#CBD5E1" fontSize={11} />
+                      <Tooltip content={<QuestionBarTooltip />} />
+                      {barKeys.map((key, index) => (
+                        <Bar key={key} dataKey={key} name={key} fill={BAR_COLORS[index % BAR_COLORS.length]} radius={[4, 4, 0, 0]} />
+                      ))}
                     </BarChart>
                   </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-[440px] items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-sm text-white/60">
+                    막대그래프 데이터가 없습니다.
+                  </div>
                 )}
               </div>
 
-              {/* 원형그래프 - 최종 결과 비율 */}
-              <div className="bg-gray-900 border border-gray-700 rounded-xl p-6">
-                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  🥧 최종 결과 비율
-                  <span className="text-sm font-normal text-gray-400">
-                    (원형그래프)
-                  </span>
+              <div className="rounded-3xl border border-white/20 bg-black/35 p-5 backdrop-blur-xl sm:p-6">
+                <h3 className="mb-5 text-lg font-bold text-white sm:text-xl">
+                  최종 결과 유형 분포
                 </h3>
-
-                {data?.pieChartData && data.pieChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                {data?.pieChartData?.length ? (
+                  <ResponsiveContainer width="100%" height={440}>
                     <PieChart>
                       <Pie
                         data={data.pieChartData.map((item) => ({
@@ -274,181 +330,53 @@ export default function ResultDashboard() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, value, percent }) =>
-                          `${name}: ${(percent * 100).toFixed(1)}%`
-                        }
-                        outerRadius={120}
-                        fill="#8884d8"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                        outerRadius={128}
                         dataKey="value"
                       >
                         {data.pieChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                          <Cell key={`pie-${entry.name}-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip content={<CustomPieTooltip />} />
-                      <Legend
-                        wrapperStyle={{ color: "#9CA3AF", fontSize: "12px" }}
-                      />
+                      <Tooltip content={<ResultPieTooltip />} />
+                      <Legend wrapperStyle={{ color: "#E2E8F0", fontSize: "12px" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-[400px] flex items-center justify-center text-gray-500">
-                    아직 데이터가 없습니다
+                  <div className="flex h-[440px] items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-sm text-white/60">
+                    원형그래프 데이터가 없습니다.
                   </div>
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* 상세 통계 테이블 */}
-            {data?.finalResultStats &&
-              Object.keys(data.finalResultStats).length > 0 && (
-                <div className="bg-gray-900 border border-gray-700 rounded-xl p-6">
-                  <h3 className="text-xl font-bold text-white mb-6">
-                    📋 유형별 상세 통계
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-700">
-                          <th className="text-left py-3 px-4 text-gray-300">
-                            순위
-                          </th>
-                          <th className="text-left py-3 px-4 text-gray-300">
-                            유형
-                          </th>
-                          <th className="text-right py-3 px-4 text-gray-300">
-                            참여자 수
-                          </th>
-                          <th className="text-right py-3 px-4 text-gray-300">
-                            비율
-                          </th>
-                          <th className="text-left py-3 px-4 text-gray-300">
-                            그래프
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(data.finalResultStats)
-                          .sort(([, a], [, b]) => b - a)
-                          .map(([type, count], index) => {
-                            const percentage = (
-                              (count / data.totalResponses) *
-                              100
-                            ).toFixed(1);
-                            return (
-                              <tr
-                                key={type}
-                                className="border-b border-gray-800 hover:bg-gray-800/50"
-                              >
-                                <td className="py-3 px-4 text-gray-400">
-                                  #{index + 1}
-                                </td>
-                                <td className="py-3 px-4 font-medium text-white">
-                                  {type}
-                                </td>
-                                <td className="py-3 px-4 text-right text-blue-400 font-bold">
-                                  {count}명
-                                </td>
-                                <td className="py-3 px-4 text-right text-green-400 font-medium">
-                                  {percentage}%
-                                </td>
-                                <td className="py-3 px-4">
-                                  <div className="w-full bg-gray-700 rounded-full h-2">
-                                    <div
-                                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                                      style={{ width: `${percentage}%` }}
-                                    ></div>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-            {/* 세부 응답 데이터 테이블 */}
-            {data?.detailedResponses && data.detailedResponses.length > 0 && (
-              <div className="bg-gray-900 border border-gray-700 rounded-xl p-6">
-                <h3 className="text-xl font-bold text-white mb-6 flex items-center justify-between">
-                  <span>📝 세부 응답 데이터</span>
-                  <span className="text-sm font-normal text-gray-400">
-                    (최근 50개)
-                  </span>
-                </h3>
-
+            {sortedResultStats.length > 0 && (
+              <section className="rounded-3xl border border-white/20 bg-black/35 p-5 backdrop-blur-xl sm:p-6">
+                <h3 className="mb-5 text-lg font-bold text-white sm:text-xl">유형별 상세 통계</h3>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full min-w-[720px] text-sm">
                     <thead>
-                      <tr className="border-b border-gray-700">
-                        <th className="text-left py-3 px-4 text-gray-300">
-                          ID
-                        </th>
-                        <th className="text-left py-3 px-4 text-gray-300">
-                          세션 ID
-                        </th>
-                        <th className="text-center py-3 px-4 text-gray-300">
-                          질문
-                        </th>
-                        <th className="text-center py-3 px-4 text-gray-300">
-                          선택
-                        </th>
-                        <th className="text-center py-3 px-4 text-gray-300">
-                          응답 시간
-                        </th>
-                        <th className="text-center py-3 px-4 text-gray-300">
-                          상태
-                        </th>
+                      <tr className="border-b border-white/15 text-white/65">
+                        <th className="px-4 py-3 text-left">순위</th>
+                        <th className="px-4 py-3 text-left">유형</th>
+                        <th className="px-4 py-3 text-right">참여자 수</th>
+                        <th className="px-4 py-3 text-right">비율</th>
+                        <th className="px-4 py-3 text-left">분포</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {data.detailedResponses.map((response) => (
-                        <tr
-                          key={response.id}
-                          className="border-b border-gray-800 hover:bg-gray-800/50"
-                        >
-                          <td className="py-3 px-4 text-gray-400 font-mono">
-                            #{response.id}
-                          </td>
-                          <td className="py-3 px-4 text-gray-400 font-mono text-xs">
-                            {response.session_id.split("_")[1]}...
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="bg-blue-600/20 text-blue-300 px-2 py-1 rounded-full text-xs font-medium">
-                              Q{response.question_id}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                ["A", "C", "E"].includes(
-                                  response.selected_option
-                                )
-                                  ? "bg-green-600/20 text-green-300"
-                                  : "bg-red-600/20 text-red-300"
-                              }`}
-                            >
-                              {response.selected_option}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-center text-gray-300 text-xs">
-                            {new Date(response.created_at).toLocaleString(
-                              "ko-KR",
-                              {
-                                month: "2-digit",
-                                day: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <div className="flex justify-center">
-                              <span className="px-3 py-1 bg-green-600/20 border border-green-500/30 text-green-300 rounded-lg text-xs">
-                                📊 데이터 보존됨
-                              </span>
+                      {sortedResultStats.map((item) => (
+                        <tr key={item.type} className="border-b border-white/10 hover:bg-white/5">
+                          <td className="px-4 py-3 text-white/60">#{item.rank}</td>
+                          <td className="px-4 py-3 font-semibold text-white">{item.type}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-jeju-sky">{item.count}명</td>
+                          <td className="px-4 py-3 text-right font-semibold text-jeju-mint">{item.percentage}%</td>
+                          <td className="px-4 py-3">
+                            <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-jeju-ocean to-jeju-cta"
+                                style={{ width: `${item.percentage}%` }}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -456,46 +384,93 @@ export default function ResultDashboard() {
                     </tbody>
                   </table>
                 </div>
+              </section>
+            )}
 
-                {/* 페이지 정보 */}
-                <div className="mt-4 text-center text-gray-400 text-sm">
-                  총 {data.detailedResponses.length}개의 응답이 표시됩니다.
-                  <br />
-                  <span className="text-xs text-gray-500">
-                    🔒 모든 데이터는 통계 목적으로 안전하게 보관됩니다.
-                  </span>
+            {data?.detailedResponses?.length > 0 && (
+              <section className="rounded-3xl border border-white/20 bg-black/35 p-5 backdrop-blur-xl sm:p-6">
+                <div className="mb-5 flex flex-wrap items-end justify-between gap-2">
+                  <h3 className="text-lg font-bold text-white sm:text-xl">세부 응답 데이터</h3>
+                  <span className="text-xs text-white/60 sm:text-sm">최근 {data.detailedResponses.length}개</span>
                 </div>
-              </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[900px] text-sm">
+                    <thead>
+                      <tr className="border-b border-white/15 text-white/65">
+                        <th className="px-4 py-3 text-left">ID</th>
+                        <th className="px-4 py-3 text-left">세션</th>
+                        <th className="px-4 py-3 text-center">질문</th>
+                        <th className="px-4 py-3 text-center">선택</th>
+                        <th className="px-4 py-3 text-center">응답 시간</th>
+                        <th className="px-4 py-3 text-center">상태</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.detailedResponses.map((response) => {
+                        const token = response.session_id?.split("_")?.[1] || response.session_id || "-";
+
+                        return (
+                          <tr key={response.id} className="border-b border-white/10 hover:bg-white/5">
+                            <td className="px-4 py-3 font-mono text-white/70">#{response.id}</td>
+                            <td className="px-4 py-3 font-mono text-xs text-white/55">{token.slice(0, 8)}...</td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="rounded-full border border-jeju-sky/40 bg-jeju-ocean/20 px-2.5 py-1 text-xs font-semibold text-jeju-sky">
+                                Q{response.question_id}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span
+                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                  ["A", "C", "E"].includes(response.selected_option)
+                                    ? "bg-jeju-mint/20 text-jeju-mint"
+                                    : "bg-jeju-cta/20 text-jeju-cta"
+                                }`}
+                              >
+                                {response.selected_option}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center text-xs text-white/65">
+                              {new Date(response.created_at).toLocaleString("ko-KR", {
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="rounded-lg border border-jeju-mint/40 bg-jeju-mint/15 px-3 py-1 text-xs font-semibold text-jeju-mint">
+                                데이터 보존됨
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <p className="mt-4 text-center text-xs text-white/50 sm:text-sm">
+                  모든 데이터는 통계 목적으로 안전하게 보관됩니다.
+                </p>
+              </section>
             )}
           </div>
         )}
       </main>
 
-      {/* 푸터 */}
-      <footer className="bg-gray-900/50 backdrop-blur-sm border-t border-white/10 mt-16">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="flex items-center space-x-4">
-              <Image
-                src="/logo.svg"
-                alt="제주맹글이"
-                width={162}
-                height={24}
-                className="h-6 w-auto"
-              />
-            </div>
-            <div className="text-center md:text-right">
-              <p className="text-white/60 text-sm">
-                문의:{" "}
-                <a
-                  href="mailto:darkwinterlab@gmail.com"
-                  className="text-jeju-mint hover:text-white transition-colors font-medium"
-                >
-                  darkwinterlab@gmail.com
-                </a>
-              </p>
-            </div>
-          </div>
+      <footer className="border-t border-white/10 bg-black/30">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6">
+          <Image src="/logo.svg" alt="제주맹글이" width={162} height={24} className="h-6 w-auto" />
+          <p className="text-sm text-white/65">
+            문의:{" "}
+            <a
+              href="mailto:darkwinterlab@gmail.com"
+              className="font-medium text-jeju-mint transition-colors hover:text-white"
+            >
+              darkwinterlab@gmail.com
+            </a>
+          </p>
         </div>
       </footer>
     </div>
