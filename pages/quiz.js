@@ -261,37 +261,6 @@ export default function Quiz() {
     }
   };
 
-  // Supabase에 퀴즈 응답을 저장하는 함수
-  const saveQuizResponse = async (
-    sessionId,
-    questionId,
-    axis,
-    selectedOption,
-    finalResult = null
-  ) => {
-    try {
-      const { data, error } = await supabase.from("quiz_responses").insert([
-        {
-          session_id: sessionId,
-          question_id: questionId,
-          axis: axis,
-          selected_option: selectedOption,
-          final_result: finalResult,
-          question_text: QUESTIONS[questionId - 1].question,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (error) {
-        console.error("퀴즈 응답 저장 오류:", error);
-      } else {
-        console.log("퀴즈 응답 저장 성공:", data);
-      }
-    } catch (err) {
-      console.error("데이터베이스 연결 오류:", err);
-    }
-  };
-
   // 최종 결과를 저장하는 함수
   const saveFinalResult = async (sessionId, answers, finalResult) => {
     try {
@@ -324,14 +293,6 @@ export default function Quiz() {
       [currentAxis]: [...(answers[currentAxis] || []), optionId],
     };
     setAnswers(newAnswers);
-
-    // 현재 답변을 데이터베이스에 저장
-    await saveQuizResponse(
-      sessionId,
-      currentQuestion + 1, // 질문 ID (1부터 시작)
-      currentAxis,
-      optionId
-    );
 
     setIsAnimating(true);
 

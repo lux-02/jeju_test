@@ -7,22 +7,31 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 모든 응답 데이터 조회
-    const { data: responses, error: responsesError } = await supabase
-      .from("quiz_responses")
-      .select("question_id, selected_option");
+    // 문항별 응답은 선택 수집이며, 최종 결과 통계가 핵심 집계 데이터입니다.
+    const [
+      { data: responses, error: responsesError },
+      { data: results, error: resultsError },
+    ] = await Promise.all([
+      supabase.from("quiz_responses").select("question_id, selected_option"),
+      supabase.from("quiz_results").select("final_result"),
+    ]);
 
-    // 최종 결과 데이터 조회
-    const { data: results, error: resultsError } = await supabase
-      .from("quiz_results")
-      .select("final_result");
-
-    if (responsesError || resultsError) {
+    if (resultsError) {
       return res.status(500).json({
         success: false,
         error: "데이터 조회 실패",
-        details: { responsesError, resultsError },
+        details: { resultsError },
       });
+    }
+
+    const safeResponses = responsesError ? [] : responses || [];
+    const safeResults = results || [];
+
+    if (responsesError) {
+      console.warn(
+        "quiz_responses 조회 실패 - 최종 결과 통계만으로 응답을 계속합니다:",
+        responsesError.message
+      );
     }
 
     // 질문별 응답 비율 계산
@@ -33,7 +42,7 @@ export default async function handler(req, res) {
       questionStats[i] = {};
     }
 
-    responses.forEach((response) => {
+    safeResponses.forEach((response) => {
       const questionId = response.question_id;
       const option = response.selected_option;
 
@@ -96,7 +105,7 @@ export default async function handler(req, res) {
 
     // 최종 결과 비율 계산
     const finalResultStats = {};
-    results.forEach((result) => {
+    safeResults.forEach((result) => {
       finalResultStats[result.final_result] =
         (finalResultStats[result.final_result] || 0) + 1;
     });
@@ -113,7 +122,7 @@ export default async function handler(req, res) {
       }));
 
     // 총 응답자 수
-    const totalResponses = results.length;
+    const totalResponses = safeResults.length;
 
     // 세부 응답 데이터 조회 (최근 50개)
     const { data: detailedResponses, error: detailedError } = await supabase
